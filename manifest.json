@@ -1,0 +1,16 @@
+{
+  "name": "Mental Math Trainer",
+  "short_name": "MathDrill",
+  "description": "Day-of-the-Week, Vedic, and Trachtenberg mental math trainer PWA.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#409eff",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/512/brain.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

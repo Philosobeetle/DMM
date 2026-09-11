@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Mental Math Trainer</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#409eff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Math Drill">
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --border: #dcdfe6;
+      --text: #303133;
+      --subtext: #606266;
+      --muted: #909399;
+      --primary: #409eff;
+      --primary-hover: #66b1ff;
+      --success: #67c23a;
+      --warning: #e6a23c;
+      --danger: #f56c6c;
+      --purple: #9b59b6;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app {
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+
+    .title { font-size: 26px; font-weight: bold; color: var(--primary); text-align: center; margin: 8px 0 4px; }
+    .subtitle { font-size: 13px; color: var(--subtext); text-align: center; margin-bottom: 16px; }
+    .badge-bar { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 20px; }
+
+    .btn {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: none;
+      background-color: var(--muted);
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: opacity 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .btn:active { transform: scale(0.98); opacity: 0.9; }
+    .btn-primary { background-color: var(--primary); }
+    .btn-success { background-color: var(--success); }
+    .btn-warning { background-color: var(--warning); }
+    .btn-danger { background-color: var(--danger); }
+    .btn-purple { background-color: var(--purple); }
+
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .grid-cell {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background-color: var(--card);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 6px;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .grid-cell.selected {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    .grid-cell .mark { font-size: 18px; margin-bottom: 4px; }
+
+    .prompt-text { font-size: 36px; font-weight: bold; text-align: center; margin: 24px 0; }
+    .answer-text { font-size: 34px; font-weight: bold; color: var(--primary); text-align: center; margin: 16px 0; }
+    .status-text { font-size: 16px; color: var(--muted); text-align: center; margin-bottom: 16px; }
+
+    textarea, pre {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
+      max-height: 280px;
+    }
+
+    .row { display: flex; gap: 8px; width: 100%; margin-bottom: 10px; }
+    .row .btn { flex: 1; margin-bottom: 0; }
+
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 16px;
+      margin-bottom: 12px;
+    }
+    .stepper-btn {
+      width: 36px; height: 36px; border-radius: 8px; border: none;
+      background: var(--primary); color: white; font-weight: bold; font-size: 18px;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .spacer { flex: 1; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // --- APP DATA & SKILLS ---
+    const SKILLS = [
+      { id: 'day_of_week', category: 'dow', category_name: 'Day of the Week', name: 'What day of the week?' },
+      { id: 'vedic_square5', category: 'vedic', category_name: 'Vedic Math', name: 'Square a number ending in 5' },
+      { id: 'vedic_nikhilam', category: 'vedic', category_name: 'Vedic Math', name: 'Multiply near base 100 (Nikhilam)' },
+      { id: 'vedic_crosswise', category: 'vedic', category_name: 'Vedic Math', name: '2-digit × 2-digit crosswise' },
+      { id: 'vedic_complement', category: 'vedic', category_name: 'Vedic Math', name: 'Subtract from power of 10' },
+      { id: 'trach_5', category: 'trach', category_name: 'Trachtenberg', name: 'Multiply by 5' },
+      { id: 'trach_6', category: 'trach', category_name: 'Trachtenberg', name: 'Multiply by 6' },
+      { id: 'trach_7', category: 'trach', category_name: 'Trachtenberg', name: 'Multiply by 7' },
+      { id: 'trach_8', category: 'trach', category_name: 'Trachtenberg', name: 'Multiply by 8' },
+      { id: 'trach_9', category: 'trach', category_name: 'Trachtenberg', name: 'Multiply by 9' },
+      { id: 'trach_11', category: 'trach', category_name: 'Trachtenberg', name: 'Multiply by 11' },
+      { id: 'trach_12', category: 'trach', category_name: 'Trachtenberg', name: 'Multiply by 12' },
+    ];
+
+    const GUIDE = {
+      day_of_week: "MONTH CODES: Jan 6 (5 leap), Feb 2 (1 leap), Mar 2, Apr 5, May 0, Jun 3, Jul 5, Aug 1, Sep 4, Oct 6, Nov 2, Dec 4.\n\nYEAR CODE: (Y + floor(Y/4) + century offset) mod 7.\nCentury offsets: 2000s=0, 1900s=1, 1800s=3, 1700s=5, 1600s=0.\n\nFORMULA: (Month Code + Date + Year Code) mod 7.\nResult: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun.",
+      vedic_square5: "SQUARING NUMBERS ENDING IN 5:\nWrite as (10a + 5).\nMultiply a × (a + 1), then append 25 to the end.\nExample: 65² → 6 × 7 = 42 → 4225.",
+      vedic_nikhilam: "MULTIPLY NEAR BASE 100:\n1. Find deviations from 100.\n2. Cross-subtract/add deviation to get left part.\n3. Multiply deviations to get right part.\nExample: 97 × 94 (devs 3, 6) → 97-6 = 91; 3×6 = 18 → 9118.",
+      vedic_crosswise: "CROSSWISE (2×2):\nUnits: b×d\nTens: a×d + b×c + carry\nHundreds: a×c + carry.",
+      vedic_complement: "ALL FROM 9, LAST FROM 10:\nSubtract every digit from 9, except the last non-zero digit, which you subtract from 10.\nExample: 10000 - 4567 = 5433.",
+      trach_5: "MULTIPLY BY 5: For each digit, take half of its right neighbor (rounded down). Add 5 if digit is odd.",
+      trach_6: "MULTIPLY BY 6: Digit + half neighbor + (5 if digit is odd).",
+      trach_7: "MULTIPLY BY 7: Double digit + half neighbor + (5 if digit is odd).",
+      trach_8: "MULTIPLY BY 8: Rightmost: (10-digit)×2. Others: (9-digit)×2 + neighbor. Leading 0: neighbor - 2.",
+      trach_9: "MULTIPLY BY 9: Rightmost: 10-digit. Others: (9-digit) + neighbor. Leading 0: neighbor - 1.",
+      trach_11: "MULTIPLY BY 11: Add digit to its right neighbor.",
+      trach_12: "MULTIPLY BY 12: Double digit + right neighbor."
+    };
+
+    const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    // --- LOCAL STORAGE STATE ---
+    let config = {
+      num_questions: 5,
+      answer_mode: 'manual',
+      auto_delay: 5,
+      selected_skills: SKILLS.map(s => s.id),
+      adaptive: false,
+      tts_enabled: true,
+      tts_rate: 1.0,
+      beep_enabled: true,
+      handsfree: false
+    };
+
+    let stats = JSON.parse(localStorage.getItem('daydrill_stats') || '{}');
+    let tutorialProgress = JSON.parse(localStorage.getItem('daydrill_tutorial') || '{}');
+
+    function saveConfig() { localStorage.setItem('daydrill_config', JSON.stringify(config)); }
+    function saveStats() { localStorage.setItem('daydrill_stats', JSON.stringify(stats)); }
+    function saveTutorial() { localStorage.setItem('daydrill_tutorial', JSON.stringify(tutorialProgress)); }
+
+    const savedConfig = localStorage.getItem('daydrill_config');
+    if (savedConfig) { try { config = { ...config, ...JSON.parse(savedConfig) }; } catch(e){} }
+
+    // --- AUDIO & SPEECH UTILS ---
+    let audioCtx = null;
+    function playBeep() {
+      if (!config.beep_enabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12);
+      } catch(e) {}
+    }
+
+    function speak(text) {
+      if (!config.tts_enabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = config.tts_rate;
+      window.speechSynthesis.speak(utter);
+    }
+
+    // --- MATH & DATE GENERATORS ---
+    function isLeapYear(year) {
+      return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+    }
+
+    function getOrdinal(n) {
+      const s = ["th", "st", "nd", "rd"];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    function benjaminDayExplain(y, m, d) {
+      const mcTable = {1:6, 2:2, 3:2, 4:5, 5:0, 6:3, 7:5, 8:1, 9:4, 10:6, 11:2, 12:4};
+      const mcLeap = {1:5, 2:1};
+      const centTable = {0:0, 1:5, 2:3, 3:1};
+
+      const leap = isLeapYear(y);
+      let mc = (leap && (m === 1 || m === 2)) ? mcLeap[m] : mcTable[m];
+      const Y = y % 100;
+      const century = Math.floor(y / 100);
+      const leaps = Math.floor(Y / 4);
+      const offset = centTable[century % 4];
+      const totalYc = Y + leaps + offset;
+      const yc = totalYc % 7;
+      const total = mc + d + yc;
+      const code = total % 7;
+
+      const dayIdx = (code === 0) ? 0 : code; 
+      const dayName = WEEKDAYS[code];
+
+      const steps = [
+        `STEP 1 — MONTH CODE\n  ${MONTH_NAMES[m]} → ${mc} ${leap && (m<=2) ? '(Leap Year)' : ''}`,
+        `STEP 2 — YEAR CODE\n  Last 2 digits of ${y}: ${Y}\n  Leaps: ${Y} ÷ 4 = ${leaps}\n  Century offset (${century}00s): ${offset}\n  ${Y} + ${leaps} + ${offset} = ${totalYc} → mod 7 = ${yc}`,
+        `STEP 3 — TOTAL\n  Month (${mc}) + Day (${d}) + Year (${yc}) = ${total}\n  ${total} mod 7 = ${code} → ${dayName}`
+      ];
+      return { dayName, steps: steps.join('\n\n') };
+    }
+
+    function generateQuestion(skillId) {
+      if (skillId === 'day_of_week') {
+        const start = new Date(1600, 0, 1).getTime();
+        const end = new Date(2099, 11, 31).getTime();
+        const randTime = start + Math.random() * (end - start);
+        const dt = new Date(randTime);
+        const y = dt.getFullYear(), m = dt.getMonth() + 1, d = dt.getDate();
+        const res = benjaminDayExplain(y, m, d);
+        return {
+          prompt: `${y}/${m}/${d}`,
+          speakPrompt: `${MONTH_NAMES[m]} ${getOrdinal(d)}, ${y}`,
+          answer: res.dayName,
+          speakAnswer: res.dayName
+        };
+      }
+      if (skillId === 'vedic_square5') {
+        const a = Math.random() < 0.5 ? Math.floor(Math.random()*9)+1 : Math.floor(Math.random()*90)+10;
+        const num = a * 10 + 5;
+        const ans = num * num;
+        return { prompt: `${num}²`, speakPrompt: `${num} squared`, answer: String(ans), speakAnswer: String(ans) };
+      }
+      if (skillId === 'vedic_nikhilam') {
+        const x = Math.floor(Math.random()*15) + 85;
+        const y = Math.floor(Math.random()*15) + 85;
+        const ans = x * y;
+        return { prompt: `${x} × ${y}`, speakPrompt: `${x} times ${y}`, answer: String(ans), speakAnswer: String(ans) };
+      }
+      if (skillId === 'vedic_crosswise') {
+        const x = Math.floor(Math.random()*89) + 11;
+        const y = Math.floor(Math.random()*89) + 11;
+        const ans = x * y;
+        return { prompt: `${x} × ${y}`, speakPrompt: `${x} times ${y}`, answer: String(ans), speakAnswer: String(ans) };
+      }
+      if (skillId === 'vedic_complement') {
+        const d = Math.floor(Math.random()*3) + 2;
+        const base = Math.pow(10, d);
+        const x = Math.floor(Math.random()*(base - Math.pow(10, d-1) - 1)) + Math.pow(10, d-1) + 1;
+        const ans = base - x;
+        return { prompt: `${base} − ${x}`, speakPrompt: `${base} minus ${x}`, answer: String(ans), speakAnswer: String(ans) };
+      }
+      if (skillId.startsWith('trach_')) {
+        const k = parseInt(skillId.split('_')[1]);
+        const digits = Math.floor(Math.random()*3) + 2;
+        const x = Math.floor(Math.random()*(Math.pow(10, digits) - Math.pow(10, digits-1))) + Math.pow(10, digits-1);
+        const ans = x * k;
+        return { prompt: `${x} × ${k}`, speakPrompt: `${x} times ${k}`, answer: String(ans), speakAnswer: String(ans) };
+      }
+    }
+
+    // --- SESSION STATE ---
+    let session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null, countdown: 0 };
+
+    // --- UI ROUTER & RENDERER ---
+    const app = document.getElementById('app');
+
+    function renderHome() {
+      const completedTutorials = Object.keys(tutorialProgress).length;
+      app.innerHTML = `
+        <div class="title">Mental Math Trainer</div>
+        <div class="subtitle">Day-of-Week • Vedic Math • Trachtenberg System</div>
+        <div class="badge-bar">🎓 Tutorial: ${completedTutorials} of ${SKILLS.length} complete</div>
+        <button class="btn btn-primary" onclick="renderSkillSelect()">▶ Start Drill</button>
+        <button class="btn btn-success" onclick="renderDateCalc()">📅 Date Calculator</button>
+        <button class="btn btn-purple" onclick="renderTutorialMenu()">🎓 Tutorial Mode</button>
+        <button class="btn btn-purple" onclick="renderGuide()">📖 How the Tricks Work</button>
+        <button class="btn" onclick="renderStats()">📊 My Stats</button>
+        <button class="btn" onclick="renderSettings()">🔊 Speech Settings</button>
+      `;
+    }
+
+    function renderSkillSelect() {
+      let cells = SKILLS.map(s => {
+        const sel = config.selected_skills.includes(s.id);
+        return `<div class="grid-cell ${sel ? 'selected' : ''}" onclick="toggleSkill('${s.id}')">
+          <div class="mark">${sel ? '✓' : '＋'}</div>
+          <div>${s.name}</div>
+        </div>`;
+      }).join('');
+
+      app.innerHTML = `
+        <div class="title">Choose Skills</div>
+        <div class="grid">${cells}</div>
+        <div class="row">
+          <button class="btn" onclick="selectAllSkills(true)">Select All</button>
+          <button class="btn" onclick="selectAllSkills(false)">Select None</button>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="renderHome()">Home</button>
+          <button class="btn btn-primary" onclick="renderCountSelect()">Next ›</button>
+        </div>
+      `;
+    }
+
+    function toggleSkill(id) {
+      if (config.selected_skills.includes(id)) {
+        config.selected_skills = config.selected_skills.filter(s => s !== id);
+      } else {
+        config.selected_skills.push(id);
+      }
+      saveConfig();
+      renderSkillSelect();
+    }
+
+    function selectAllSkills(enable) {
+      config.selected_skills = enable ? SKILLS.map(s => s.id) : [];
+      saveConfig();
+      renderSkillSelect();
+    }
+
+    function renderCountSelect() {
+      if (config.selected_skills.length === 0) {
+        alert('Please select at least one skill.');
+        return renderSkillSelect();
+      }
+      let buttons = '';
+      for (let i = 1; i <= 10; i++) {
+        const active = config.num_questions === i;
+        buttons += `<button class="btn ${active ? 'btn-primary' : ''}" onclick="selectCount(${i})">${i}</button>`;
+      }
+      app.innerHTML = `
+        <div class="title">How Many Questions?</div>
+        <div class="grid" style="grid-template-columns: repeat(5, 1fr);">${buttons}</div>
+        <div class="spacer"></div>
+        <button class="btn" onclick="renderSkillSelect()">‹ Back</button>
+      `;
+    }
+
+    function selectCount(n) {
+      config.num_questions = n;
+      saveConfig();
+      renderModeSelect();
+    }
+
+    function renderModeSelect() {
+      app.innerHTML = `
+        <div class="title">Answer Mode</div>
+        <button class="btn ${config.answer_mode === 'manual' ? 'btn-primary' : ''}" onclick="setMode('manual')">
+          Push-to-Answer (tap when ready)
+        </button>
+        <button class="btn ${config.answer_mode === 'auto' ? 'btn-primary' : ''}" onclick="setMode('auto')">
+          Auto-Reveal (spoken after timer)
+        </button>
+
+        <div class="stepper">
+          <span>Reveal after ${config.auto_delay} seconds</span>
+          <div>
+            <button class="stepper-btn" onclick="adjustDelay(-1)">−</button>
+            <button class="stepper-btn" onclick="adjustDelay(1)">＋</button>
+          </div>
+        </div>
+
+        <button class="btn ${config.adaptive ? 'btn-success' : ''}" onclick="toggleAdaptive()">
+          ${config.adaptive ? '✓' : '☐'} Adaptive: favor weaker skills
+        </button>
+
+        <button class="btn ${config.handsfree ? 'btn-purple' : ''}" onclick="toggleHandsfree()">
+          ${config.handsfree ? '✓' : '☐'} Hands-free: auto-advance
+        </button>
+
+        <div class="spacer"></div>
+        <div class="row">
+          <button class="btn" onclick="renderCountSelect()">‹ Back</button>
+          <button class="btn btn-primary" onclick="startSession()">Start Drill ›</button>
+        </div>
+      `;
+    }
+
+    function setMode(m) { config.answer_mode = m; saveConfig(); renderModeSelect(); }
+    function adjustDelay(d) { config.auto_delay = Math.max(1, Math.min(30, config.auto_delay + d)); saveConfig(); renderModeSelect(); }
+    function toggleAdaptive() { config.adaptive = !config.adaptive; saveConfig(); renderModeSelect(); }
+    function toggleHandsfree() { config.handsfree = !config.handsfree; if (config.handsfree) config.answer_mode = 'auto'; saveConfig(); renderModeSelect(); }
+
+    function startSession() {
+      session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null };
+      nextQuestion();
+    }
+
+    function nextQuestion() {
+      if (session.currentIndex >= config.num_questions) {
+        return renderResults();
+      }
+      const skillId = config.selected_skills[Math.floor(Math.random() * config.selected_skills.length)];
+      const skill = SKILLS.find(s => s.id === skillId);
+      const qData = generateQuestion(skillId);
+
+      session.current = { skillId, skillName: skill.name, categoryName: skill.category_name, ...qData, timeTaken: 0, selfCorrect: null };
+
+      app.innerHTML = `
+        <div class="subtitle">${skill.category_name} — Q${session.currentIndex + 1} of ${config.num_questions}</div>
+        <div class="title">${skill.name}</div>
+        <div class="prompt-text">${qData.prompt}</div>
+        <div class="status-text" id="status-label"></div>
+        <div class="spacer"></div>
+        <button class="btn" onclick="speak('${qData.speakPrompt}')">🔊 Repeat Question</button>
+        ${config.answer_mode === 'manual' ? '<button class="btn btn-primary" onclick="revealAnswer(true)">Show Answer</button>' : ''}
+      `;
+
+      speak(qData.speakPrompt);
+      session.startTime = Date.now();
+
+      if (config.answer_mode === 'manual') {
+        session.timer = setInterval(() => {
+          const elapsed = ((Date.now() - session.startTime) / 1000).toFixed(1);
+          document.getElementById('status-label').innerText = `${elapsed} s`;
+        }, 100);
+      } else {
+        session.countdown = config.auto_delay;
+        session.timer = setInterval(() => {
+          session.countdown--;
+          if (session.countdown <= 5 && session.countdown > 0) playBeep();
+          if (session.countdown <= 0) {
+            clearInterval(session.timer);
+            revealAnswer(false);
+          } else {
+            document.getElementById('status-label').innerText = `Revealing in ${session.countdown} s…`;
+          }
+        }, 1000);
+      }
+    }
+
+    function revealAnswer(manual) {
+      clearInterval(session.timer);
+      const timeTaken = parseFloat(((Date.now() - session.startTime) / 1000).toFixed(1));
+      session.current.timeTaken = timeTaken;
+
+      app.innerHTML = `
+        <div class="subtitle">${session.current.prompt}</div>
+        <div class="answer-text">${session.current.answer}</div>
+        <div class="status-text">Time: ${timeTaken} s</div>
+        <div class="spacer"></div>
+        <button class="btn" onclick="speak('The answer is ${session.current.speakAnswer}')">🔊 Repeat Answer</button>
+        <div class="row">
+          <button class="btn btn-success" onclick="reportGrading(true)">✓ Right</button>
+          <button class="btn btn-danger" onclick="reportGrading(false)">✗ Wrong</button>
+        </div>
+      `;
+
+      speak(`The answer is ${session.current.speakAnswer}`);
+
+      if (config.handsfree && !manual) {
+        setTimeout(() => { reportGrading(true); }, 4000);
+      }
+    }
+
+    function reportGrading(correct) {
+      session.current.selfCorrect = correct;
+      const s = stats[session.current.skillId] || { attempts: 0, correct: 0, total_time: 0 };
+      s.attempts++;
+      if (correct) s.correct++;
+      s.total_time += session.current.timeTaken;
+      stats[session.current.skillId] = s;
+      saveStats();
+
+      session.questions.push(session.current);
+      session.currentIndex++;
+      nextQuestion();
+    }
+
+    function renderResults() {
+      const graded = session.questions.filter(q => q.selfCorrect !== null);
+      const correctCount = graded.filter(q => q.selfCorrect).length;
+      const avgTime = (graded.reduce((a, c) => a + c.timeTaken, 0) / (graded.length || 1)).toFixed(1);
+
+      let list = session.questions.map((q, i) => 
+        `${i+1}. [${q.categoryName}] ${q.prompt} = ${q.answer} (${q.selfCorrect ? '✓' : '✗'}) — ${q.timeTaken}s`
+      ).join('\n');
+
+      app.innerHTML = `
+        <div class="title">Session Complete</div>
+        <div class="subtitle">${correctCount}/${graded.length} correct | Avg ${avgTime}s</div>
+        <pre>${list}</pre>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" onclick="startSession()">Same Settings Again</button>
+        <button class="btn" onclick="renderSkillSelect()">New Drill</button>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function renderDateCalc() {
+      app.innerHTML = `
+        <div class="title">Date Calculator</div>
+        <input type="date" id="date-picker" value="${new Date().toISOString().split('T')[0]}" onchange="calculateDate()">
+        <div class="row">
+          <button class="btn" onclick="shiftYear(-100)">−100y</button>
+          <button class="btn" onclick="shiftYear(-10)">−10y</button>
+          <button class="btn btn-primary" onclick="resetDateToday()">Today</button>
+          <button class="btn" onclick="shiftYear(10)">+10y</button>
+          <button class="btn" onclick="shiftYear(100)">+100y</button>
+        </div>
+        <div class="answer-text" id="date-result"></div>
+        <textarea id="date-steps" readonly></textarea>
+        <div class="spacer"></div>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+      calculateDate();
+    }
+
+    function calculateDate() {
+      const val = document.getElementById('date-picker').value;
+      if (!val) return;
+      const parts = val.split('-');
+      const y = parseInt(parts[0]), m = parseInt(parts[1]), d = parseInt(parts[2]);
+      const res = benjaminDayExplain(y, m, d);
+      document.getElementById('date-result').innerText = `${MONTH_NAMES[m]} ${getOrdinal(d)}, ${y}\n${res.dayName}`;
+      document.getElementById('date-steps').value = res.steps;
+    }
+
+    function shiftYear(delta) {
+      const el = document.getElementById('date-picker');
+      const parts = el.value.split('-');
+      const y = parseInt(parts[0]) + delta;
+      el.value = `${y}-${parts[1]}-${parts[2]}`;
+      calculateDate();
+    }
+
+    function resetDateToday() {
+      document.getElementById('date-picker').value = new Date().toISOString().split('T')[0];
+      calculateDate();
+    }
+
+    function renderTutorialMenu() {
+      let items = SKILLS.map(s => `
+        <button class="btn btn-purple" onclick="renderGuideDetail('${s.id}')">
+          ${tutorialProgress[s.id] ? '✅' : '🎓'} ${s.name}
+        </button>
+      `).join('');
+
+      app.innerHTML = `
+        <div class="title">Tutorial Mode</div>
+        <div class="subtitle">Select a technique to read the guide and practice</div>
+        ${items}
+        <div class="spacer"></div>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function renderGuide() {
+      let items = SKILLS.map(s => `
+        <button class="btn" onclick="renderGuideDetail('${s.id}')">📖 ${s.name}</button>
+      `).join('');
+
+      app.innerHTML = `
+        <div class="title">How the Tricks Work</div>
+        ${items}
+        <div class="spacer"></div>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function renderGuideDetail(skillId) {
+      const skill = SKILLS.find(s => s.id === skillId);
+      const text = GUIDE[skillId] || 'No guide available for this technique.';
+
+      app.innerHTML = `
+        <div class="title">${skill.name}</div>
+        <textarea readonly style="height: 240px;">${text}</textarea>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" onclick="markTutorialDone('${skillId}')">Mark as Completed ✓</button>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function markTutorialDone(skillId) {
+      tutorialProgress[skillId] = true;
+      saveTutorial();
+      renderTutorialMenu();
+    }
+
+    function renderStats() {
+      let text = SKILLS.map(s => {
+        const st = stats[s.id];
+        if (!st || st.attempts === 0) return `${s.name}: No attempts yet`;
+        const acc = ((st.correct / st.attempts) * 100).toFixed(0);
+        const avg = (st.total_time / st.attempts).toFixed(1);
+        return `${s.name}:\n   ${st.attempts} attempts, ${acc}% correct, avg ${avg}s`;
+      }).join('\n\n');
+
+      app.innerHTML = `
+        <div class="title">My Stats</div>
+        <textarea readonly style="height: 260px;">${text}</textarea>
+        <div class="spacer"></div>
+        <button class="btn btn-danger" onclick="resetStats()">Clear Stats</button>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function resetStats() {
+      if (confirm('Clear all recorded statistics?')) {
+        stats = {};
+        saveStats();
+        renderStats();
+      }
+    }
+
+    function renderSettings() {
+      app.innerHTML = `
+        <div class="title">Speech Settings</div>
+        <button class="btn ${config.tts_enabled ? 'btn-success' : ''}" onclick="toggleTTS()">
+          ${config.tts_enabled ? '✓' : '☐'} Read Questions & Answers Aloud
+        </button>
+        <button class="btn ${config.beep_enabled ? 'btn-success' : ''}" onclick="toggleBeep()">
+          ${config.beep_enabled ? '✓' : '☐'} Countdown Beep Tone
+        </button>
+        <button class="btn" onclick="speak('Speech rate and voice working correctly.')">🔊 Test Speech</button>
+        <div class="spacer"></div>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function toggleTTS() { config.tts_enabled = !config.tts_enabled; saveConfig(); renderSettings(); }
+    function toggleBeep() { config.beep_enabled = !config.beep_enabled; saveConfig(); renderSettings(); }
+
+    // --- SERVICE WORKER REGISTRATION ---
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    renderHome();
+  </script>
+</body>
+</html>
