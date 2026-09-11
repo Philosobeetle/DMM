@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
   <title>Mental Math Trainer</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" type="image/png" href="icon.png">
   <meta name="theme-color" content="#409eff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -143,10 +145,10 @@
       background: var(--primary); color: white; font-weight: bold; font-size: 18px;
     }
 
-    input[type="date"] {
+    input[type="date"], input[type="text"] {
       width: 100%;
       padding: 12px;
-      font-size: 18px;
+      font-size: 14px;
       border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--card);
@@ -211,6 +213,17 @@
       overflow-y: auto;
       max-height: 50vh;
       padding-right: 2px;
+      margin-bottom: 12px;
+    }
+
+    .instructions-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--subtext);
+      line-height: 1.5;
       margin-bottom: 12px;
     }
 
@@ -392,6 +405,48 @@
       }
     }
 
+    // --- SHORTCUTS / URL PARSER ---
+    function checkUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has('skills') && !params.has('q') && !params.has('start')) return false;
+
+      if (params.has('skills')) {
+        const s = params.get('skills').toLowerCase();
+        if (s === 'all') {
+          config.selected_skills = SKILLS.map(sk => sk.id);
+        } else if (s === 'vedic') {
+          config.selected_skills = SKILLS.filter(sk => sk.category === 'vedic').map(sk => sk.id);
+        } else if (s === 'trach') {
+          config.selected_skills = SKILLS.filter(sk => sk.category === 'trach').map(sk => sk.id);
+        } else {
+          config.selected_skills = s.split(',').map(x => x.trim()).filter(x => SKILLS.some(sk => sk.id === x));
+        }
+      }
+
+      if (params.has('q')) {
+        const q = parseInt(params.get('q'));
+        if (q >= 1 && q <= 10) config.num_questions = q;
+      }
+
+      if (params.has('mode')) {
+        const m = params.get('mode').toLowerCase();
+        if (m === 'manual' || m === 'auto') config.answer_mode = m;
+      }
+
+      if (params.has('delay')) {
+        const d = parseInt(params.get('delay'));
+        if (d >= 1 && d <= 30) config.auto_delay = d;
+      }
+
+      saveConfig();
+
+      if (params.get('start') === 'true' || params.get('start') === '1') {
+        startSession();
+        return true;
+      }
+      return false;
+    }
+
     // --- SESSION STATE ---
     let session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null, countdown: 0 };
 
@@ -408,6 +463,7 @@
         <button class="btn btn-success" onclick="renderDateCalc()">📅 Date Calculator</button>
         <button class="btn btn-purple" onclick="renderTutorialMenu()">🎓 Tutorial Mode</button>
         <button class="btn btn-purple" onclick="renderGuide()">📖 How the Tricks Work</button>
+        <button class="btn" onclick="renderShortcutsBuilder()">🗣 Siri & Shortcuts Builder</button>
         <button class="btn" onclick="renderStats()">📊 My Stats</button>
         <button class="btn" onclick="renderSettings()">🔊 Speech Settings</button>
       `;
@@ -725,6 +781,88 @@
       renderTutorialMenu();
     }
 
+    // --- SHORTCUT BUILDER SCREEN ---
+    let shortcutPreset = {
+      skillPreset: 'day_of_week',
+      q: 3,
+      mode: 'manual',
+      delay: 5
+    };
+
+    function renderShortcutsBuilder() {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const generatedUrl = `${baseUrl}?skills=${shortcutPreset.skillPreset}&q=${shortcutPreset.q}&mode=${shortcutPreset.mode}&delay=${shortcutPreset.delay}&start=true`;
+
+      app.innerHTML = `
+        <div class="title">Shortcut Link Creator</div>
+        <div class="subtitle">Build custom preset links for the iOS Shortcuts app or Siri</div>
+
+        <div class="stepper">
+          <span>Skill Group</span>
+          <select id="preset-skills" onchange="updateShortcutPreset('skillPreset', this.value)" style="border:none; font-weight:bold; color:var(--primary); font-size:14px; background:none;">
+            <option value="day_of_week" ${shortcutPreset.skillPreset==='day_of_week'?'selected':''}>Day of the Week</option>
+            <option value="vedic" ${shortcutPreset.skillPreset==='vedic'?'selected':''}>Vedic Math All</option>
+            <option value="trach" ${shortcutPreset.skillPreset==='trach'?'selected':''}>Trachtenberg All</option>
+            <option value="all" ${shortcutPreset.skillPreset==='all'?'selected':''}>All 12 Skills</option>
+          </select>
+        </div>
+
+        <div class="stepper">
+          <span>Questions: <b>${shortcutPreset.q}</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustShortcutQ(-1)">−</button>
+            <button class="stepper-btn" onclick="adjustShortcutQ(1)">＋</button>
+          </div>
+        </div>
+
+        <div class="stepper">
+          <span>Answer Mode</span>
+          <div>
+            <button class="btn ${shortcutPreset.mode==='manual'?'btn-primary':''}" style="padding:6px 10px; margin:0 2px; font-size:12px; display:inline-block; width:auto;" onclick="updateShortcutPreset('mode','manual')">Push</button>
+            <button class="btn ${shortcutPreset.mode==='auto'?'btn-primary':''}" style="padding:6px 10px; margin:0 2px; font-size:12px; display:inline-block; width:auto;" onclick="updateShortcutPreset('mode','auto')">Auto</button>
+          </div>
+        </div>
+
+        <input type="text" readonly id="generated-url" value="${generatedUrl}" onclick="this.select()">
+
+        <button class="btn btn-primary" onclick="copyShortcutUrl('${generatedUrl}')">📋 Copy Link for Shortcuts</button>
+
+        <div class="instructions-card">
+          <b>How to add to iOS Shortcuts:</b><br>
+          1. Tap <b>Copy Link</b> above.<br>
+          2. Open iOS <b>Shortcuts app</b> $\rightarrow$ Tap <b>+</b> (new shortcut).<br>
+          3. Tap <b>Add Action</b> $\rightarrow$ Search <b>"Open URLs"</b>.<br>
+          4. Paste this copied URL into the action field.<br>
+          5. Rename the shortcut (e.g., <i>"Quick Math"</i>). You can now ask Siri to run it!
+        </div>
+
+        <div class="spacer"></div>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function updateShortcutPreset(key, val) {
+      shortcutPreset[key] = val;
+      renderShortcutsBuilder();
+    }
+
+    function adjustShortcutQ(delta) {
+      shortcutPreset.q = Math.max(1, Math.min(10, shortcutPreset.q + delta));
+      renderShortcutsBuilder();
+    }
+
+    function copyShortcutUrl(url) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+          alert('Link copied to clipboard!');
+        }).catch(() => {
+          prompt('Copy this link:', url);
+        });
+      } else {
+        prompt('Copy this link:', url);
+      }
+    }
+
     function renderStats() {
       let totalAttempts = 0;
       let totalCorrect = 0;
@@ -860,7 +998,9 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
 
-    renderHome();
+    if (!checkUrlParams()) {
+      renderHome();
+    }
   </script>
 </body>
 </html>
