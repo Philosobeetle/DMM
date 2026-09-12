@@ -120,20 +120,6 @@
     .answer-text { font-size: 28px; font-weight: bold; color: var(--primary); text-align: center; margin: 8px 0; }
     .status-text { font-size: 15px; color: var(--muted); text-align: center; margin-bottom: 12px; }
 
-    textarea, pre {
-      width: 100%;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 12px;
-      color: var(--text);
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow-y: auto;
-    }
-
     .row { display: flex; gap: 6px; width: 100%; margin-bottom: 8px; flex-wrap: nowrap; }
     .row .btn { flex: 1 1 0; min-width: 0; margin-bottom: 0; font-size: 13px; padding: 10px 4px; }
 
@@ -248,14 +234,14 @@
       color: var(--subtext);
     }
 
-    /* TUTORIAL WORKED SOLUTION CARDS */
+    /* TUTORIAL & DATE CALCULATOR WORKED SOLUTION CARDS */
     .solution-card {
       background: var(--card);
       border: 1px solid var(--warning);
       border-left: 5px solid var(--warning);
       border-radius: 12px;
       padding: 12px;
-      margin: 10px 0;
+      margin: 8px 0;
       text-align: left;
     }
     .solution-header {
@@ -458,15 +444,21 @@
 
       const dayName = WEEKDAYS[code];
 
-      let leapNote = "";
-      if (leap && (m === 1 || m === 2)) {
-        leapNote = `\n  ⚠️ LEAP YEAR RULE: ${MONTH_NAMES[m]} code drops by 1 (${mcTable[m]} → ${mc}).`;
+      let leapExplanation = "";
+      if (leap) {
+        if (m === 1 || m === 2) {
+          leapExplanation = `\n  • ${y} is a LEAP YEAR → ${MONTH_NAMES[m]} code is reduced by 1 (${mcTable[m]} → ${mc}).`;
+        } else {
+          leapExplanation = `\n  • ${y} is a LEAP YEAR (${MONTH_NAMES[m]} is unaffected; leap rule only alters Jan/Feb).`;
+        }
+      } else {
+        leapExplanation = `\n  • ${y} is a NORMAL YEAR (no leap year adjustments).`;
       }
 
       const steps = [
-        `STEP 1 — MONTH CODE: ${mc}\n  Month: ${MONTH_NAMES[m]}\n  Memory Tip: ${MONTH_MNEMONICS[m]}${leapNote}`,
-        `STEP 2 — YEAR CODE: ${yc}\n  Year: ${y}\n  • Last 2 digits (Y): ${Y}\n  • Leap count (Y ÷ 4): ${leaps}\n  • Century offset (${century}00s): ${offset}\n  Calculation: (${Y} + ${leaps} + ${offset}) = ${totalYc} → ${totalYc} mod 7 = ${yc}`,
-        `STEP 3 — COMBINE & REDUCE\n  Month Code (${mc}) + Day (${d}) + Year Code (${yc}) = ${total}\n  ${total} mod 7 = ${code} → ${dayName}\n  (1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun)`
+        `STEP 1 — LEAP YEAR CHECK & MONTH CODE: ${mc}\n  • Month: ${MONTH_NAMES[m]}\n  • Memory Mnemonic: ${MONTH_MNEMONICS[m]}${leapExplanation}`,
+        `STEP 2 — YEAR CODE: ${yc}\n  • Selected Year: ${y}\n  • Last 2 digits (Y): ${Y}\n  • Leap count (Y ÷ 4): ${leaps} (floor division)\n  • Century offset (${century}00s): ${offset}\n  • Calculation: (${Y} + ${leaps} + ${offset}) = ${totalYc} → ${totalYc} mod 7 = ${yc}`,
+        `STEP 3 — COMBINE & REDUCE\n  • Month Code (${mc}) + Day (${d}) + Year Code (${yc}) = ${total}\n  • ${total} mod 7 = ${code} → ${dayName}\n  (Weekday index: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun)`
       ];
       return { dayName, steps: steps.join('\n\n') };
     }
@@ -912,15 +904,27 @@
       const correctCount = graded.filter(q => q.selfCorrect).length;
       const avgTime = (graded.reduce((a, c) => a + c.timeTaken, 0) / (graded.length || 1)).toFixed(1);
 
-      let list = session.questions.map((q, i) => 
-        `${i+1}. [${q.categoryName}] ${q.prompt} = ${q.answer} (${q.selfCorrect ? '✓' : '✗'}) — ${q.timeTaken}s`
-      ).join('\n');
+      let cardsHtml = session.questions.map((q, i) => {
+        const isRight = q.selfCorrect === true;
+        const badgeColor = isRight ? 'var(--success)' : 'var(--danger)';
+        const markText = isRight ? '✓ Right' : '✗ Wrong';
+        return `
+          <div class="stat-card" style="border-left: 4px solid ${badgeColor};">
+            <div class="stat-card-header">
+              <span>Q${i+1}. ${q.prompt} = <b>${q.answer}</b></span>
+              <span class="stat-card-cat">${q.categoryName}</span>
+            </div>
+            <div class="stat-card-details" style="margin-top: 4px;">
+              <span style="color: ${badgeColor}; font-weight: bold;">${markText}</span>
+              <span>Time: <b>${q.timeTaken}s</b></span>
+            </div>
+          </div>`;
+      }).join('');
 
       app.innerHTML = `
         <div class="title">Session Complete</div>
-        <div class="subtitle">${correctCount}/${graded.length} correct | Avg ${avgTime}s</div>
-        <pre>${list}</pre>
-        <div class="spacer"></div>
+        <div class="subtitle">${correctCount}/${graded.length} correct | Avg Speed: ${avgTime}s</div>
+        <div class="scroll-container">${cardsHtml}</div>
         <button class="btn btn-primary" onclick="startSession()">Same Settings Again</button>
         <button class="btn" onclick="renderSkillSelect()">New Drill</button>
         <button class="btn" onclick="renderHome()">Home</button>
@@ -939,7 +943,7 @@
           <button class="btn" onclick="shiftYear(100)">+100y</button>
         </div>
         <div class="answer-text" id="date-result"></div>
-        <textarea id="date-steps" readonly style="flex: 1; min-height: 200px; margin-bottom: 8px;"></textarea>
+        <div class="scroll-container" id="date-steps-container"></div>
         <button class="btn" onclick="renderHome()">Home</button>
       `;
       calculateDate();
@@ -952,7 +956,7 @@
       const y = parseInt(parts[0]), m = parseInt(parts[1]), d = parseInt(parts[2]);
       const res = benjaminDayExplain(y, m, d);
       document.getElementById('date-result').innerText = `${MONTH_NAMES[m]} ${getOrdinal(d)}, ${y}\n${res.dayName}`;
-      document.getElementById('date-steps').value = res.steps;
+      document.getElementById('date-steps-container').innerHTML = formatSolutionHtml(res.steps, res.dayName);
     }
 
     function shiftYear(delta) {
@@ -986,6 +990,29 @@
 
     let tutorialSession = { skillId: null, stepIndex: 0, questions: [], currentQ: null };
 
+    function formatGuideHtml(skillId, guideText) {
+      const skill = SKILLS.find(s => s.id === skillId);
+      const blocks = guideText.split(/\n\n+/);
+      let blocksHtml = blocks.map(block => {
+        const lines = block.split('\n');
+        const firstLine = lines[0];
+        const restLines = lines.slice(1).join('<br>');
+        return `
+          <div class="solution-step">
+            <div class="solution-step-title">${firstLine}</div>
+            ${restLines ? `<div class="solution-step-body">${restLines}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="solution-card" style="border-left-color: var(--purple); border-color: var(--purple);">
+          <div class="solution-header" style="color: var(--purple);">📖 ${skill.name} Rules</div>
+          ${blocksHtml}
+        </div>
+      `;
+    }
+
     function renderTutorialDetail(skillId) {
       tutorialSession.skillId = skillId;
       const skill = SKILLS.find(s => s.id === skillId);
@@ -993,11 +1020,10 @@
 
       app.innerHTML = `
         <div class="title">${skill.name}</div>
-        <div class="subtitle">Step-by-Step Technique Guide</div>
-        <textarea readonly style="height: 220px;">${guideText}</textarea>
+        <div class="subtitle">Technique & Formula Guide</div>
+        <div class="scroll-container">${formatGuideHtml(skillId, guideText)}</div>
         <button class="btn btn-primary" onclick="startTutorialPractice('${skillId}')">Start Step-by-Step Guided Practice (10 Qs) ›</button>
         <button class="btn btn-success" onclick="markTutorialDone('${skillId}')">Mark as Completed ✓</button>
-        <div class="spacer"></div>
         <button class="btn" onclick="renderTutorialMenu()">‹ Back to Tutorials</button>
       `;
     }
@@ -1013,7 +1039,7 @@
     }
 
     function formatSolutionHtml(stepsText, answer) {
-      const blocks = stepsText.split(/\n\n+/);
+      const blocks = Array.isArray(stepsText) ? stepsText : stepsText.split(/\n\n+/);
       let blocksHtml = blocks.map(block => {
         const lines = block.split('\n');
         const firstLine = lines[0];
@@ -1028,7 +1054,7 @@
 
       return `
         <div class="solution-card">
-          <div class="solution-header">💡 Step-by-Step Solution</div>
+          <div class="solution-header">💡 Step-by-Step Worked Solution</div>
           ${blocksHtml}
           <div class="solution-answer-box">
             <span class="solution-answer-label">FINAL ANSWER</span>
