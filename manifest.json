@@ -1,6 +1,6 @@
 {
   "name": "Mental Math Trainer",
-  "short_name": "MathDrill",
+  "short_name": "Thufir",
   "description": "Day-of-the-Week, Vedic, and Trachtenberg mental math trainer PWA.",
   "start_url": "index.html",
   "display": "standalone",
