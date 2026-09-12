@@ -46,25 +46,25 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding-top: 12px;
-      padding-bottom: 12px;
+      padding-top: 8px;
+      padding-bottom: 8px;
     }
 
-    .title { font-size: 26px; font-weight: bold; color: var(--primary); text-align: center; margin: 8px 0 4px; }
-    .subtitle { font-size: 13px; color: var(--subtext); text-align: center; margin-bottom: 16px; }
-    .badge-bar { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 20px; }
+    .title { font-size: 24px; font-weight: bold; color: var(--primary); text-align: center; margin: 4px 0 2px; }
+    .subtitle { font-size: 13px; color: var(--subtext); text-align: center; margin-bottom: 12px; }
+    .badge-bar { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 16px; }
 
     .btn {
       width: 100%;
-      padding: 14px 16px;
+      padding: 13px 14px;
       border-radius: 12px;
       border: none;
       background-color: var(--muted);
       color: white;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
       cursor: pointer;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       transition: opacity 0.15s, transform 0.1s;
       display: flex;
       align-items: center;
@@ -78,10 +78,18 @@
     .btn-danger { background-color: var(--danger); }
     .btn-purple { background-color: var(--purple); }
 
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+      gap: 8px;
       margin-bottom: 12px;
     }
 
@@ -95,9 +103,9 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: bold;
-      padding: 6px;
+      padding: 4px;
       cursor: pointer;
       color: var(--text);
     }
@@ -106,11 +114,11 @@
       border-color: var(--primary);
       color: white;
     }
-    .grid-cell .mark { font-size: 18px; margin-bottom: 4px; }
+    .grid-cell .mark { font-size: 16px; margin-bottom: 2px; }
 
-    .prompt-text { font-size: 36px; font-weight: bold; text-align: center; margin: 24px 0; }
-    .answer-text { font-size: 34px; font-weight: bold; color: var(--primary); text-align: center; margin: 16px 0; }
-    .status-text { font-size: 16px; color: var(--muted); text-align: center; margin-bottom: 16px; }
+    .prompt-text { font-size: 34px; font-weight: bold; text-align: center; margin: 20px 0; }
+    .answer-text { font-size: 30px; font-weight: bold; color: var(--primary); text-align: center; margin: 12px 0; }
+    .status-text { font-size: 15px; color: var(--muted); text-align: center; margin-bottom: 12px; }
 
     textarea, pre {
       width: 100%;
@@ -119,16 +127,16 @@
       border-radius: 12px;
       padding: 12px;
       font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text);
       white-space: pre-wrap;
       word-break: break-word;
       overflow-y: auto;
-      max-height: 280px;
+      max-height: 260px;
     }
 
-    .row { display: flex; gap: 8px; width: 100%; margin-bottom: 10px; }
-    .row .btn { flex: 1; margin-bottom: 0; }
+    .row { display: flex; gap: 6px; width: 100%; margin-bottom: 8px; flex-wrap: nowrap; }
+    .row .btn { flex: 1 1 0; min-width: 0; margin-bottom: 0; font-size: 13px; padding: 10px 4px; }
 
     .stepper {
       display: flex;
@@ -137,48 +145,80 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 8px 16px;
-      margin-bottom: 12px;
+      padding: 8px 14px;
+      margin-bottom: 10px;
     }
     .stepper-btn {
-      width: 36px; height: 36px; border-radius: 8px; border: none;
+      width: 34px; height: 36px; border-radius: 8px; border: none;
       background: var(--primary); color: white; font-weight: bold; font-size: 18px;
     }
 
     input[type="date"], input[type="text"] {
       width: 100%;
-      padding: 12px;
-      font-size: 14px;
+      padding: 10px;
+      font-size: 15px;
       border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--card);
       color: var(--text);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       text-align: center;
     }
+
+    /* BASIC CALCULATOR UI */
+    .calc-screen {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: right;
+      margin-bottom: 12px;
+    }
+    .calc-formula { font-size: 14px; color: var(--muted); min-height: 18px; }
+    .calc-display { font-size: 32px; font-weight: bold; color: var(--text); overflow-x: auto; }
+    .calc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .calc-btn {
+      padding: 16px 0;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 12px;
+      border: none;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .calc-btn:active { background: var(--border); }
+    .calc-btn.op { background: var(--primary); color: white; border: none; }
+    .calc-btn.action { background: var(--warning); color: white; border: none; }
 
     /* STATS UI STYLES */
     .stats-summary {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 16px;
+      gap: 6px;
+      margin-bottom: 12px;
     }
     .stat-box {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px 8px;
+      padding: 10px 6px;
       text-align: center;
     }
-    .stat-box .val { font-size: 20px; font-weight: bold; color: var(--primary); }
-    .stat-box .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .stat-box .val { font-size: 18px; font-weight: bold; color: var(--primary); }
+    .stat-box .lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
     .stat-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px;
+      padding: 10px 12px;
       margin-bottom: 8px;
     }
     .stat-card-header {
@@ -186,16 +226,16 @@
       justify-content: space-between;
       align-items: center;
       font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 6px;
+      font-size: 13px;
+      margin-bottom: 4px;
     }
-    .stat-card-cat { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--bg); color: var(--subtext); }
+    .stat-card-cat { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--bg); color: var(--subtext); }
     .progress-bar {
       height: 6px;
       background: var(--bg);
       border-radius: 3px;
       overflow: hidden;
-      margin: 6px 0;
+      margin: 4px 0;
     }
     .progress-fill {
       height: 100%;
@@ -205,15 +245,15 @@
     .stat-card-details {
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--subtext);
     }
 
     .scroll-container {
       overflow-y: auto;
-      max-height: 50vh;
+      max-height: 48vh;
       padding-right: 2px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .instructions-card {
@@ -221,10 +261,10 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--subtext);
       line-height: 1.5;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .spacer { flex: 1; }
@@ -252,18 +292,18 @@
     ];
 
     const GUIDE = {
-      day_of_week: "MONTH CODES: Jan 6 (5 leap), Feb 2 (1 leap), Mar 2, Apr 5, May 0, Jun 3, Jul 5, Aug 1, Sep 4, Oct 6, Nov 2, Dec 4.\n\nYEAR CODE: (Y + floor(Y/4) + century offset) mod 7.\nCentury offsets: 2000s=0, 1900s=1, 1800s=3, 1700s=5, 1600s=0.\n\nFORMULA: (Month Code + Date + Year Code) mod 7.\nResult: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun.",
-      vedic_square5: "SQUARING NUMBERS ENDING IN 5:\nWrite as (10a + 5).\nMultiply a × (a + 1), then append 25 to the end.\nExample: 65² → 6 × 7 = 42 → 4225.",
-      vedic_nikhilam: "MULTIPLY NEAR BASE 100:\n1. Find deviations from 100.\n2. Cross-subtract/add deviation to get left part.\n3. Multiply deviations to get right part.\nExample: 97 × 94 (devs 3, 6) → 97-6 = 91; 3×6 = 18 → 9118.",
-      vedic_crosswise: "CROSSWISE (2×2):\nUnits: b×d\nTens: a×d + b×c + carry\nHundreds: a×c + carry.",
-      vedic_complement: "ALL FROM 9, LAST FROM 10:\nSubtract every digit from 9, except the last non-zero digit, which you subtract from 10.\nExample: 10000 - 4567 = 5433.",
-      trach_5: "MULTIPLY BY 5: For each digit, take half of its right neighbor (rounded down). Add 5 if digit is odd.",
-      trach_6: "MULTIPLY BY 6: Digit + half neighbor + (5 if digit is odd).",
-      trach_7: "MULTIPLY BY 7: Double digit + half neighbor + (5 if digit is odd).",
-      trach_8: "MULTIPLY BY 8: Rightmost: (10-digit)×2. Others: (9-digit)×2 + neighbor. Leading 0: neighbor - 2.",
-      trach_9: "MULTIPLY BY 9: Rightmost: 10-digit. Others: (9-digit) + neighbor. Leading 0: neighbor - 1.",
-      trach_11: "MULTIPLY BY 11: Add digit to its right neighbor.",
-      trach_12: "MULTIPLY BY 12: Double digit + right neighbor."
+      day_of_week: "MONTH CODES:\nJan 6 (5 leap), Feb 2 (1 leap), Mar 2, Apr 5, May 0, Jun 3, Jul 5, Aug 1, Sep 4, Oct 6, Nov 2, Dec 4.\n\nYEAR CODE:\n(Y + floor(Y/4) + century offset) mod 7.\nCentury offsets: 2000s=0, 1900s=1, 1800s=3, 1700s=5, 1600s=0.\n\nFORMULA:\n(Month Code + Date + Year Code) mod 7.\nResult: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun.",
+      vedic_square5: "SQUARING NUMBERS ENDING IN 5:\nWrite as (10a + 5).\n1. Multiply leading digit(s) 'a' by (a + 1).\n2. Append '25' to the end.\n\nExample: 65² → 6 × 7 = 42 → 4225.",
+      vedic_nikhilam: "MULTIPLY NEAR BASE 100 (NIKHILAM):\n1. Find deviations from 100.\n2. Cross-subtract/add deviation to get left part.\n3. Multiply deviations to get right part.\n\nExample: 97 × 94 (deviations -3, -6) → 97 - 6 = 91; 3 × 6 = 18 → 9118.",
+      vedic_crosswise: "URDHVA-TIRYAGBHYAM (2×2 CROSSWISE):\nFor 'ab × cd':\n1. Units digit: b × d (keep units, carry tens)\n2. Tens digit: a×d + b×c + carry\n3. Hundreds: a×c + carry\n\nExample: 32 × 47 → 2×7=14 (write 4, c1); 3×7 + 2×4 + 1 = 30 (write 0, c3); 3×4 + 3 = 15 → 1504.",
+      vedic_complement: "ALL FROM 9, LAST FROM 10:\nSubtract every digit from 9, except the last non-zero digit, which you subtract from 10.\n\nExample: 10000 - 4567 = 5433.",
+      trach_5: "TRACHTENBERG × 5:\nFor each digit, take half of its right neighbor (rounded down). If current digit is odd, add 5.",
+      trach_6: "TRACHTENBERG × 6:\nFor each digit, add digit + half of right neighbor (rounded down) + (5 if digit is odd).",
+      trach_7: "TRACHTENBERG × 7:\nDouble current digit + half of right neighbor (rounded down) + (5 if digit is odd).",
+      trach_8: "TRACHTENBERG × 8:\nRightmost: (10 - digit) × 2.\nMiddle digits: (9 - digit) × 2 + neighbor.\nLeading zero: neighbor - 2.",
+      trach_9: "TRACHTENBERG × 9:\nRightmost: 10 - digit.\nMiddle digits: (9 - digit) + neighbor.\nLeading zero: neighbor - 1.",
+      trach_11: "TRACHTENBERG × 11:\nAdd each digit to its right neighbor (with padded leading/trailing zero).",
+      trach_12: "TRACHTENBERG × 12:\nDouble each digit, then add its right neighbor."
     };
 
     const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -319,7 +359,7 @@
       window.speechSynthesis.speak(utter);
     }
 
-    // --- MATH & DATE GENERATORS ---
+    // --- MATH & DATE GENERATORS & EXPLAINERS ---
     function isLeapYear(year) {
       return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
     }
@@ -354,6 +394,33 @@
         `STEP 3 — TOTAL\n  Month (${mc}) + Day (${d}) + Year (${yc}) = ${total}\n  ${total} mod 7 = ${code} → ${dayName}`
       ];
       return { dayName, steps: steps.join('\n\n') };
+    }
+
+    function generateExplainer(skillId, prompt) {
+      if (skillId === 'day_of_week') {
+        const parts = prompt.split('/');
+        return benjaminDayExplain(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])).steps;
+      }
+      if (skillId === 'vedic_square5') {
+        const num = parseInt(prompt.replace('²', ''));
+        const a = Math.floor(num / 10);
+        const p = a * (a + 1);
+        return `STEP 1 — Leading digit(s): ${a}\nSTEP 2 — Multiply by (a+1): ${a} × ${a + 1} = ${p}\nSTEP 3 — Append 25: ${p}25`;
+      }
+      if (skillId === 'vedic_nikhilam') {
+        const parts = prompt.split(' × ');
+        const x = parseInt(parts[0]), y = parseInt(parts[1]);
+        const devX = 100 - x, devY = 100 - y;
+        const left = x - devY;
+        const right = devX * devY;
+        return `STEP 1 — Deviations from 100: ${x} (-${devX}), ${y} (-${devY})\nSTEP 2 — Cross-subtract: ${x} - ${devY} = ${left}\nSTEP 3 — Multiply deviations: ${devX} × ${devY} = ${right}\nSTEP 4 — Combine: ${left}${right < 10 ? '0' + right : right}`;
+      }
+      if (skillId === 'vedic_complement') {
+        const parts = prompt.split(' − ');
+        const base = parseInt(parts[0]), x = parseInt(parts[1]);
+        return `Rule: All digits from 9, last nonzero from 10.\nProblem: ${base} − ${x}\nResult = ${base - x}`;
+      }
+      return GUIDE[skillId] || "Follow the step-by-step mental math rule for this skill.";
     }
 
     function generateQuestion(skillId) {
@@ -459,14 +526,108 @@
         <div class="title">Mental Math Trainer</div>
         <div class="subtitle">Day-of-Week • Vedic Math • Trachtenberg System</div>
         <div class="badge-bar">🎓 Tutorial: ${completedTutorials} of ${SKILLS.length} complete</div>
+        
+        <!-- TOP SECTION -->
         <button class="btn btn-primary" onclick="renderSkillSelect()">▶ Start Drill</button>
+        <button class="btn btn-success" onclick="renderMathCalc()">🔢 Math Calculator</button>
         <button class="btn btn-success" onclick="renderDateCalc()">📅 Date Calculator</button>
         <button class="btn btn-purple" onclick="renderTutorialMenu()">🎓 Tutorial Mode</button>
-        <button class="btn btn-purple" onclick="renderGuide()">📖 How the Tricks Work</button>
+
+        <!-- MIDDLE SPACER GAP -->
+        <div class="spacer" style="min-height: 24px;"></div>
+
+        <!-- BOTTOM SECTION -->
         <button class="btn" onclick="renderStats()">📊 My Stats</button>
         <button class="btn" onclick="renderSettings()">🔊 Speech Settings</button>
         <button class="btn" onclick="renderShortcutsBuilder()">🗣 Siri & Shortcuts Builder</button>
       `;
+    }
+
+    // --- BASIC MATH CALCULATOR SCREEN ---
+    let calcState = { display: '0', formula: '', overwrite: true };
+
+    function renderMathCalc() {
+      app.innerHTML = `
+        <div class="title">Basic Calculator</div>
+        <div class="calc-screen">
+          <div class="calc-formula" id="calc-formula">${calcState.formula}</div>
+          <div class="calc-display" id="calc-display">${calcState.display}</div>
+        </div>
+        <div class="calc-grid">
+          <button class="calc-btn action" onclick="calcBtn('C')">C</button>
+          <button class="calc-btn action" onclick="calcBtn('⌫')">⌫</button>
+          <button class="calc-btn action" onclick="calcBtn('%')">%</button>
+          <button class="calc-btn op" onclick="calcBtn('÷')">÷</button>
+
+          <button class="calc-btn" onclick="calcBtn('7')">7</button>
+          <button class="calc-btn" onclick="calcBtn('8')">8</button>
+          <button class="calc-btn" onclick="calcBtn('9')">9</button>
+          <button class="calc-btn op" onclick="calcBtn('×')">×</button>
+
+          <button class="calc-btn" onclick="calcBtn('4')">4</button>
+          <button class="calc-btn" onclick="calcBtn('5')">5</button>
+          <button class="calc-btn" onclick="calcBtn('6')">6</button>
+          <button class="calc-btn op" onclick="calcBtn('−')">−</button>
+
+          <button class="calc-btn" onclick="calcBtn('1')">1</button>
+          <button class="calc-btn" onclick="calcBtn('2')">2</button>
+          <button class="calc-btn" onclick="calcBtn('3')">3</button>
+          <button class="calc-btn op" onclick="calcBtn('+')">+</button>
+
+          <button class="calc-btn" onclick="calcBtn('±')">±</button>
+          <button class="calc-btn" onclick="calcBtn('0')">0</button>
+          <button class="calc-btn" onclick="calcBtn('.')">.</button>
+          <button class="calc-btn op" onclick="calcBtn('=')">=</button>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function calcBtn(key) {
+      let d = calcState.display;
+      let f = calcState.formula;
+
+      if (key === 'C') {
+        calcState = { display: '0', formula: '', overwrite: true };
+      } else if (key === '⌫') {
+        if (!calcState.overwrite && d.length > 1) {
+          calcState.display = d.slice(0, -1);
+        } else {
+          calcState.display = '0';
+          calcState.overwrite = true;
+        }
+      } else if ('0123456789.'.includes(key)) {
+        if (key === '.' && d.includes('.') && !calcState.overwrite) return;
+        if (calcState.overwrite) {
+          calcState.display = key === '.' ? '0.' : key;
+          calcState.overwrite = false;
+        } else {
+          calcState.display = d === '0' && key !== '.' ? key : d + key;
+        }
+      } else if (key === '±') {
+        calcState.display = String(parseFloat(d) * -1);
+      } else if (key === '%') {
+        calcState.display = String(parseFloat(d) / 100);
+      } else if ('+−×÷'.includes(key)) {
+        calcState.formula = `${d} ${key} `;
+        calcState.overwrite = true;
+      } else if (key === '=') {
+        if (!f) return;
+        const parts = f.trim().split(' ');
+        const num1 = parseFloat(parts[0]);
+        const op = parts[1];
+        const num2 = parseFloat(d);
+        let res = 0;
+        if (op === '+') res = num1 + num2;
+        if (op === '−') res = num1 - num2;
+        if (op === '×') res = num1 * num2;
+        if (op === '÷') res = num2 !== 0 ? num1 / num2 : 'Error';
+        calcState.formula = `${f}${d} =`;
+        calcState.display = String(res);
+        calcState.overwrite = true;
+      }
+      renderMathCalc();
     }
 
     function renderSkillSelect() {
@@ -733,46 +894,84 @@
       calculateDate();
     }
 
+    // --- RECONCILED STEP-BY-STEP TUTORIAL MODE ---
     function renderTutorialMenu() {
       let items = SKILLS.map(s => `
-        <button class="btn btn-purple" onclick="renderGuideDetail('${s.id}')">
+        <button class="btn btn-purple" onclick="renderTutorialDetail('${s.id}')">
           ${tutorialProgress[s.id] ? '✅' : '🎓'} ${s.name}
         </button>
       `).join('');
 
       app.innerHTML = `
-        <div class="title">Tutorial Mode</div>
-        <div class="subtitle">Select a technique to read the guide and practice</div>
-        ${items}
+        <div class="title">Tutorial Walkthroughs</div>
+        <div class="subtitle">Select a technique to read the rules and practice worked steps</div>
+        <div class="scroll-container">${items}</div>
         <div class="spacer"></div>
         <button class="btn" onclick="renderHome()">Home</button>
       `;
     }
 
-    function renderGuide() {
-      let items = SKILLS.map(s => `
-        <button class="btn" onclick="renderGuideDetail('${s.id}')">📖 ${s.name}</button>
-      `).join('');
+    let tutorialSession = { skillId: null, stepIndex: 0, questions: [], currentQ: null };
 
-      app.innerHTML = `
-        <div class="title">How the Tricks Work</div>
-        ${items}
-        <div class="spacer"></div>
-        <button class="btn" onclick="renderHome()">Home</button>
-      `;
-    }
-
-    function renderGuideDetail(skillId) {
+    function renderTutorialDetail(skillId) {
+      tutorialSession.skillId = skillId;
       const skill = SKILLS.find(s => s.id === skillId);
-      const text = GUIDE[skillId] || 'No guide available for this technique.';
+      const guideText = GUIDE[skillId] || 'Step-by-step method guide.';
 
       app.innerHTML = `
         <div class="title">${skill.name}</div>
-        <textarea readonly style="height: 240px;">${text}</textarea>
+        <div class="subtitle">Step-by-Step Technique Guide</div>
+        <textarea readonly style="height: 220px;">${guideText}</textarea>
+        <button class="btn btn-primary" onclick="startTutorialPractice('${skillId}')">Start Step-by-Step Guided Practice (10 Qs) ›</button>
+        <button class="btn btn-success" onclick="markTutorialDone('${skillId}')">Mark as Completed ✓</button>
         <div class="spacer"></div>
-        <button class="btn btn-primary" onclick="markTutorialDone('${skillId}')">Mark as Completed ✓</button>
-        <button class="btn" onclick="renderHome()">Home</button>
+        <button class="btn" onclick="renderTutorialMenu()">‹ Back to Tutorials</button>
       `;
+    }
+
+    function startTutorialPractice(skillId) {
+      tutorialSession.skillId = skillId;
+      tutorialSession.stepIndex = 0;
+      tutorialSession.questions = [];
+      for (let i = 0; i < 10; i++) {
+        tutorialSession.questions.push(generateQuestion(skillId));
+      }
+      renderTutorialQuestion();
+    }
+
+    function renderTutorialQuestion() {
+      const idx = tutorialSession.stepIndex;
+      const skill = SKILLS.find(s => s.id === tutorialSession.skillId);
+      const q = tutorialSession.questions[idx];
+
+      app.innerHTML = `
+        <div class="subtitle">${skill.name} — Guided Q${idx + 1} of 10</div>
+        <div class="prompt-text">${q.prompt}</div>
+        <div id="tutorial-explainer-box"></div>
+        <div class="spacer"></div>
+        <button class="btn btn-warning" onclick="showTutorialSteps('${skill.id}', '${q.prompt}')">💡 Show Step-by-Step Worked Solution</button>
+        <button class="btn btn-primary" onclick="advanceTutorialQuestion()">Next Question ›</button>
+        <button class="btn" onclick="renderTutorialDetail('${skill.id}')">‹ Exit Practice</button>
+      `;
+    }
+
+    function showTutorialSteps(skillId, prompt) {
+      const steps = generateExplainer(skillId, prompt);
+      const q = tutorialSession.questions[tutorialSession.stepIndex];
+      document.getElementById('tutorial-explainer-box').innerHTML = `
+        <textarea readonly style="height: 160px; border: 2px solid var(--warning);">${steps}\n\nANSWER: ${q.answer}</textarea>
+      `;
+    }
+
+    function advanceTutorialQuestion() {
+      tutorialSession.stepIndex++;
+      if (tutorialSession.stepIndex >= 10) {
+        markTutorialDone(tutorialSession.skillId);
+        alert('🎉 Tutorial Practice Complete!');
+        renderTutorialMenu();
+      } else {
+        renderTutorialQuestion();
+      }
     }
 
     function markTutorialDone(skillId) {
@@ -833,7 +1032,7 @@
           2. Open iOS <b>Shortcuts app</b> $\rightarrow$ Tap <b>+</b> (new shortcut).<br>
           3. Tap <b>Add Action</b> $\rightarrow$ Search <b>"Open URLs"</b>.<br>
           4. Paste this copied URL into the action field.<br>
-          5. Rename the shortcut (e.g., <i>"Quick Math"</i>). You can now ask Siri to run it!
+          5. Rename shortcut (e.g., <i>"Quick Math"</i>). You can now ask Siri to run it!
         </div>
 
         <div class="spacer"></div>
