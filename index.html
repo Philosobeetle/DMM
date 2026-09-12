@@ -370,6 +370,7 @@
       num_questions: 5,
       answer_mode: 'manual',
       auto_delay: 5,
+      answer_delay: 4,
       selected_skills: SKILLS.map(s => s.id),
       adaptive: false,
       tts_enabled: true,
@@ -572,6 +573,11 @@
         if (d >= 1 && d <= 30) config.auto_delay = d;
       }
 
+      if (params.has('ans_delay')) {
+        const ad = parseInt(params.get('ans_delay'));
+        if (ad >= 1 && ad <= 30) config.answer_delay = ad;
+      }
+
       saveConfig();
 
       if (params.get('start') === 'true' || params.get('start') === '1') {
@@ -582,7 +588,7 @@
     }
 
     // --- SESSION STATE ---
-    let session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null, countdown: 0 };
+    let session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null, revealTimeout: null, countdown: 0 };
 
     // --- UI ROUTER & RENDERER ---
     const app = document.getElementById('app');
@@ -771,10 +777,18 @@
         </button>
 
         <div class="stepper">
-          <span>Reveal after ${config.auto_delay} seconds</span>
+          <span>Question Timer: reveal after <b>${config.auto_delay}s</b></span>
           <div>
             <button class="stepper-btn" onclick="adjustDelay(-1)">−</button>
             <button class="stepper-btn" onclick="adjustDelay(1)">＋</button>
+          </div>
+        </div>
+
+        <div class="stepper">
+          <span>Answer Duration: show answer for <b>${config.answer_delay || 4}s</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustAnswerDelay(-1)">−</button>
+            <button class="stepper-btn" onclick="adjustAnswerDelay(1)">＋</button>
           </div>
         </div>
 
@@ -796,19 +810,21 @@
 
     function setMode(m) { config.answer_mode = m; saveConfig(); renderModeSelect(); }
     function adjustDelay(d) { config.auto_delay = Math.max(1, Math.min(30, config.auto_delay + d)); saveConfig(); renderModeSelect(); }
+    function adjustAnswerDelay(d) { config.answer_delay = Math.max(1, Math.min(30, (config.answer_delay || 4) + d)); saveConfig(); renderModeSelect(); }
     function toggleAdaptive() { config.adaptive = !config.adaptive; saveConfig(); renderModeSelect(); }
     function toggleHandsfree() { config.handsfree = !config.handsfree; if (config.handsfree) config.answer_mode = 'auto'; saveConfig(); renderModeSelect(); }
 
     function startSession() {
-      session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null };
+      session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null, revealTimeout: null };
       nextQuestion();
     }
 
     function cancelSession() {
       if (confirm('Cancel current round? Already completed questions will remain saved.')) {
         clearInterval(session.timer);
+        if (session.revealTimeout) clearTimeout(session.revealTimeout);
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-        session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null };
+        session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null, revealTimeout: null };
         renderHome();
       }
     }
@@ -859,6 +875,7 @@
 
     function revealAnswer(manual) {
       clearInterval(session.timer);
+      if (session.revealTimeout) clearTimeout(session.revealTimeout);
       const timeTaken = parseFloat(((Date.now() - session.startTime) / 1000).toFixed(1));
       session.current.timeTaken = timeTaken;
 
@@ -877,12 +894,14 @@
 
       speak(`The answer is ${session.current.speakAnswer}`);
 
-      if (config.handsfree && !manual) {
-        setTimeout(() => { reportGrading(true); }, 4000);
+      if ((config.handsfree || config.answer_mode === 'auto') && !manual) {
+        const displayTime = (config.answer_delay || 4) * 1000;
+        session.revealTimeout = setTimeout(() => { reportGrading(true); }, displayTime);
       }
     }
 
     function reportGrading(correct) {
+      if (session.revealTimeout) clearTimeout(session.revealTimeout);
       session.current.selfCorrect = correct;
       const s = stats[session.current.skillId] || { attempts: 0, correct: 0, total_time: 0, best_time: null };
       s.attempts++;
@@ -1108,12 +1127,13 @@
       skillPreset: 'day_of_week',
       q: 3,
       mode: 'manual',
-      delay: 5
+      delay: 5,
+      ansDelay: 4
     };
 
     function renderShortcutsBuilder() {
       const baseUrl = window.location.origin + window.location.pathname;
-      const generatedUrl = `${baseUrl}?skills=${shortcutPreset.skillPreset}&q=${shortcutPreset.q}&mode=${shortcutPreset.mode}&delay=${shortcutPreset.delay}&start=true`;
+      const generatedUrl = `${baseUrl}?skills=${shortcutPreset.skillPreset}&q=${shortcutPreset.q}&mode=${shortcutPreset.mode}&delay=${shortcutPreset.delay}&ans_delay=${shortcutPreset.ansDelay}&start=true`;
 
       app.innerHTML = `
         <div class="title">Shortcut Link Creator</div>
@@ -1145,6 +1165,22 @@
           </div>
         </div>
 
+        <div class="stepper">
+          <span>Question Timer: <b>${shortcutPreset.delay}s</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustShortcutDelay(-1)">−</button>
+            <button class="stepper-btn" onclick="adjustShortcutDelay(1)">＋</button>
+          </div>
+        </div>
+
+        <div class="stepper">
+          <span>Answer Duration: <b>${shortcutPreset.ansDelay}s</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustShortcutAnsDelay(-1)">−</button>
+            <button class="stepper-btn" onclick="adjustShortcutAnsDelay(1)">＋</button>
+          </div>
+        </div>
+
         <input type="text" readonly id="generated-url" value="${generatedUrl}" onclick="this.select()">
 
         <button class="btn btn-primary" onclick="copyShortcutUrl('${generatedUrl}')">📋 Copy Link for Shortcuts</button>
@@ -1170,6 +1206,16 @@
 
     function adjustShortcutQ(delta) {
       shortcutPreset.q = Math.max(1, Math.min(10, shortcutPreset.q + delta));
+      renderShortcutsBuilder();
+    }
+
+    function adjustShortcutDelay(delta) {
+      shortcutPreset.delay = Math.max(1, Math.min(30, shortcutPreset.delay + delta));
+      renderShortcutsBuilder();
+    }
+
+    function adjustShortcutAnsDelay(delta) {
+      shortcutPreset.ansDelay = Math.max(1, Math.min(30, shortcutPreset.ansDelay + delta));
       renderShortcutsBuilder();
     }
 
