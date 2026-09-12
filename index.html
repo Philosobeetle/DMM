@@ -117,7 +117,7 @@
     .grid-cell .mark { font-size: 16px; margin-bottom: 2px; }
 
     .prompt-text { font-size: 34px; font-weight: bold; text-align: center; margin: 20px 0; }
-    .answer-text { font-size: 30px; font-weight: bold; color: var(--primary); text-align: center; margin: 12px 0; }
+    .answer-text { font-size: 28px; font-weight: bold; color: var(--primary); text-align: center; margin: 8px 0; }
     .status-text { font-size: 15px; color: var(--muted); text-align: center; margin-bottom: 12px; }
 
     textarea, pre {
@@ -132,7 +132,6 @@
       white-space: pre-wrap;
       word-break: break-word;
       overflow-y: auto;
-      max-height: 260px;
     }
 
     .row { display: flex; gap: 6px; width: 100%; margin-bottom: 8px; flex-wrap: nowrap; }
@@ -250,8 +249,9 @@
     }
 
     .scroll-container {
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      max-height: 48vh;
       padding-right: 2px;
       margin-bottom: 10px;
     }
@@ -291,8 +291,23 @@
       { id: 'trach_12', category: 'trach', category_name: 'Trachtenberg', name: 'Multiply by 12' },
     ];
 
+    const MONTH_MNEMONICS = {
+      1: "WINTER = 6",
+      2: "2nd Month = 2",
+      3: "March 2 the Beat = 2",
+      4: "April FOOLS = 5",
+      5: "May0 = 0",
+      6: "June BUG = 3",
+      7: "Fiver Works 🎉 = 5",
+      8: "Capital A = 1",
+      9: "FALL = 4",
+      10: "TRICKS and TREATS = 6",
+      11: "I I / 2urkey Day = 2",
+      12: "LAST month = 4"
+    };
+
     const GUIDE = {
-      day_of_week: "MONTH CODES:\nJan 6 (5 leap), Feb 2 (1 leap), Mar 2, Apr 5, May 0, Jun 3, Jul 5, Aug 1, Sep 4, Oct 6, Nov 2, Dec 4.\n\nYEAR CODE:\n(Y + floor(Y/4) + century offset) mod 7.\nCentury offsets: 2000s=0, 1900s=1, 1800s=3, 1700s=5, 1600s=0.\n\nFORMULA:\n(Month Code + Date + Year Code) mod 7.\nResult: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun.",
+      day_of_week: "MONTH CODES:\n• Jan = WINTER = 6 (5 in Leap Year)\n• Feb = 2nd Month = 2 (1 in Leap Year)\n• Mar = March 2 the Beat = 2\n• Apr = April FOOLS = 5\n• May = May0 = 0\n• Jun = June BUG = 3\n• Jul = Fiver Works 🎉 = 5\n• Aug = Capital A = 1\n• Sep = FALL = 4\n• Oct = TRICKS and TREATS = 6\n• Nov = I I / 2urkey Day = 2\n• Dec = LAST month = 4\n\nYEAR CODE:\n(Y + floor(Y/4) + century offset) mod 7.\nCentury offsets: 2000s=0, 1900s=1, 1800s=3, 1700s=5, 1600s=0.\n\nFORMULA:\n(Month Code + Date + Year Code) mod 7.\nResult: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun.",
       vedic_square5: "SQUARING NUMBERS ENDING IN 5:\nWrite as (10a + 5).\n1. Multiply leading digit(s) 'a' by (a + 1).\n2. Append '25' to the end.\n\nExample: 65² → 6 × 7 = 42 → 4225.",
       vedic_nikhilam: "MULTIPLY NEAR BASE 100 (NIKHILAM):\n1. Find deviations from 100.\n2. Cross-subtract/add deviation to get left part.\n3. Multiply deviations to get right part.\n\nExample: 97 × 94 (deviations -3, -6) → 97 - 6 = 91; 3 × 6 = 18 → 9118.",
       vedic_crosswise: "URDHVA-TIRYAGBHYAM (2×2 CROSSWISE):\nFor 'ab × cd':\n1. Units digit: b × d (keep units, carry tens)\n2. Tens digit: a×d + b×c + carry\n3. Hundreds: a×c + carry\n\nExample: 32 × 47 → 2×7=14 (write 4, c1); 3×7 + 2×4 + 1 = 30 (write 0, c3); 3×4 + 3 = 15 → 1504.",
@@ -388,10 +403,15 @@
 
       const dayName = WEEKDAYS[code];
 
+      let leapNote = "";
+      if (leap && (m === 1 || m === 2)) {
+        leapNote = `\n  ⚠️ LEAP YEAR RULE: ${MONTH_NAMES[m]} code drops by 1 (${mcTable[m]} → ${mc}).`;
+      }
+
       const steps = [
-        `STEP 1 — MONTH CODE\n  ${MONTH_NAMES[m]} → ${mc} ${leap && (m<=2) ? '(Leap Year)' : ''}`,
-        `STEP 2 — YEAR CODE\n  Last 2 digits of ${y}: ${Y}\n  Leaps: ${Y} ÷ 4 = ${leaps}\n  Century offset (${century}00s): ${offset}\n  ${Y} + ${leaps} + ${offset} = ${totalYc} → mod 7 = ${yc}`,
-        `STEP 3 — TOTAL\n  Month (${mc}) + Day (${d}) + Year (${yc}) = ${total}\n  ${total} mod 7 = ${code} → ${dayName}`
+        `STEP 1 — MONTH CODE: ${mc}\n  Month: ${MONTH_NAMES[m]}\n  Memory Tip: ${MONTH_MNEMONICS[m]}${leapNote}`,
+        `STEP 2 — YEAR CODE: ${yc}\n  Year: ${y}\n  • Last 2 digits (Y): ${Y}\n  • Leap count (Y ÷ 4): ${leaps}\n  • Century offset (${century}00s): ${offset}\n  Calculation: (${Y} + ${leaps} + ${offset}) = ${totalYc} → ${totalYc} mod 7 = ${yc}`,
+        `STEP 3 — COMBINE & REDUCE\n  Month Code (${mc}) + Day (${d}) + Year Code (${yc}) = ${total}\n  ${total} mod 7 = ${code} → ${dayName}\n  (1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun)`
       ];
       return { dayName, steps: steps.join('\n\n') };
     }
@@ -864,8 +884,7 @@
           <button class="btn" onclick="shiftYear(100)">+100y</button>
         </div>
         <div class="answer-text" id="date-result"></div>
-        <textarea id="date-steps" readonly></textarea>
-        <div class="spacer"></div>
+        <textarea id="date-steps" readonly style="flex: 1; min-height: 180px; margin-bottom: 8px;"></textarea>
         <button class="btn" onclick="renderHome()">Home</button>
       `;
       calculateDate();
@@ -906,7 +925,6 @@
         <div class="title">Tutorial Walkthroughs</div>
         <div class="subtitle">Select a technique to read the rules and practice worked steps</div>
         <div class="scroll-container">${items}</div>
-        <div class="spacer"></div>
         <button class="btn" onclick="renderHome()">Home</button>
       `;
     }
