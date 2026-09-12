@@ -120,6 +120,20 @@
     .answer-text { font-size: 28px; font-weight: bold; color: var(--primary); text-align: center; margin: 8px 0; }
     .status-text { font-size: 15px; color: var(--muted); text-align: center; margin-bottom: 12px; }
 
+    textarea, pre {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
+    }
+
     .row { display: flex; gap: 6px; width: 100%; margin-bottom: 8px; flex-wrap: nowrap; }
     .row .btn { flex: 1 1 0; min-width: 0; margin-bottom: 0; font-size: 13px; padding: 10px 4px; }
 
@@ -365,12 +379,12 @@
     const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    // --- LOCAL STORAGE STATE ---
-    let config = {
+    // --- DEFAULT CONFIGURATION ---
+    const DEFAULT_CONFIG = {
       num_questions: 5,
-      answer_mode: 'manual',
-      auto_delay: 5,
-      answer_delay: 4,
+      answer_mode: 'auto',
+      auto_delay: 25,
+      answer_delay: 5,
       selected_skills: SKILLS.map(s => s.id),
       adaptive: false,
       tts_enabled: true,
@@ -378,6 +392,8 @@
       beep_enabled: true,
       handsfree: false
     };
+
+    let config = { ...DEFAULT_CONFIG };
 
     let stats = JSON.parse(localStorage.getItem('daydrill_stats') || '{}');
     let tutorialProgress = JSON.parse(localStorage.getItem('daydrill_tutorial') || '{}');
@@ -777,7 +793,7 @@
         </button>
 
         <div class="stepper">
-          <span>Question Timer: reveal after <b>${config.auto_delay}s</b></span>
+          <span>Question Timer: <b>${config.auto_delay}s</b></span>
           <div>
             <button class="stepper-btn" onclick="adjustDelay(-1)">−</button>
             <button class="stepper-btn" onclick="adjustDelay(1)">＋</button>
@@ -785,7 +801,7 @@
         </div>
 
         <div class="stepper">
-          <span>Answer Duration: show answer for <b>${config.answer_delay || 4}s</b></span>
+          <span>Show Answer: <b>${config.answer_delay || 5}s</b></span>
           <div>
             <button class="stepper-btn" onclick="adjustAnswerDelay(-1)">−</button>
             <button class="stepper-btn" onclick="adjustAnswerDelay(1)">＋</button>
@@ -800,6 +816,8 @@
           ${config.handsfree ? '✓' : '☐'} Hands-free: auto-advance
         </button>
 
+        <button class="btn btn-warning" style="margin-top: 4px;" onclick="resetModeDefaults()">↺ Reset Defaults</button>
+
         <div class="spacer"></div>
         <div class="row">
           <button class="btn" onclick="renderCountSelect()">‹ Back</button>
@@ -810,9 +828,20 @@
 
     function setMode(m) { config.answer_mode = m; saveConfig(); renderModeSelect(); }
     function adjustDelay(d) { config.auto_delay = Math.max(1, Math.min(30, config.auto_delay + d)); saveConfig(); renderModeSelect(); }
-    function adjustAnswerDelay(d) { config.answer_delay = Math.max(1, Math.min(30, (config.answer_delay || 4) + d)); saveConfig(); renderModeSelect(); }
+    function adjustAnswerDelay(d) { config.answer_delay = Math.max(1, Math.min(30, (config.answer_delay || 5) + d)); saveConfig(); renderModeSelect(); }
     function toggleAdaptive() { config.adaptive = !config.adaptive; saveConfig(); renderModeSelect(); }
     function toggleHandsfree() { config.handsfree = !config.handsfree; if (config.handsfree) config.answer_mode = 'auto'; saveConfig(); renderModeSelect(); }
+
+    function resetModeDefaults() {
+      config.answer_mode = DEFAULT_CONFIG.answer_mode;
+      config.auto_delay = DEFAULT_CONFIG.auto_delay;
+      config.answer_delay = DEFAULT_CONFIG.answer_delay;
+      config.num_questions = DEFAULT_CONFIG.num_questions;
+      config.adaptive = DEFAULT_CONFIG.adaptive;
+      config.handsfree = DEFAULT_CONFIG.handsfree;
+      saveConfig();
+      renderModeSelect();
+    }
 
     function startSession() {
       session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null, revealTimeout: null };
@@ -895,7 +924,7 @@
       speak(`The answer is ${session.current.speakAnswer}`);
 
       if ((config.handsfree || config.answer_mode === 'auto') && !manual) {
-        const displayTime = (config.answer_delay || 4) * 1000;
+        const displayTime = (config.answer_delay || 5) * 1000;
         session.revealTimeout = setTimeout(() => { reportGrading(true); }, displayTime);
       }
     }
@@ -1126,9 +1155,9 @@
     let shortcutPreset = {
       skillPreset: 'day_of_week',
       q: 3,
-      mode: 'manual',
-      delay: 5,
-      ansDelay: 4
+      mode: 'auto',
+      delay: 25,
+      ansDelay: 5
     };
 
     function renderShortcutsBuilder() {
@@ -1174,7 +1203,7 @@
         </div>
 
         <div class="stepper">
-          <span>Answer Duration: <b>${shortcutPreset.ansDelay}s</b></span>
+          <span>Show Answer: <b>${shortcutPreset.ansDelay}s</b></span>
           <div>
             <button class="stepper-btn" onclick="adjustShortcutAnsDelay(-1)">−</button>
             <button class="stepper-btn" onclick="adjustShortcutAnsDelay(1)">＋</button>
@@ -1296,20 +1325,46 @@
       `;
     }
 
-    function exportData() {
+    async function exportData() {
       const backupData = {
         stats,
         tutorialProgress,
         config,
         exportDate: new Date().toISOString()
       };
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-      const dlAnchor = document.createElement('a');
-      dlAnchor.setAttribute("href", dataStr);
-      dlAnchor.setAttribute("download", `math_drill_backup_${new Date().toISOString().split('T')[0]}.json`);
-      document.body.appendChild(dlAnchor);
-      dlAnchor.click();
-      dlAnchor.remove();
+      const jsonStr = JSON.stringify(backupData, null, 2);
+      const fileName = `math_drill_backup_${new Date().toISOString().split('T')[0]}.json`;
+
+      // 1. TRY NATIVE iOS SHARE SHEET (Works for Safari PWAs / iOS Files app)
+      if (navigator.canShare && navigator.share) {
+        try {
+          const file = new File([jsonStr], fileName, { type: 'application/json' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Math Drill Backup'
+            });
+            return;
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') return; // User dismissed share sheet
+        }
+      }
+
+      // 2. STANDARD BROWSER DOWNLOAD FALLBACK
+      try {
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const dlAnchor = document.createElement('a');
+        dlAnchor.href = url;
+        dlAnchor.download = fileName;
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (e) {
+        prompt('Copy backup data JSON:', jsonStr);
+      }
     }
 
     function triggerImport() {
