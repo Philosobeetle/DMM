@@ -1,4 +1,4 @@
-const CACHE_NAME = 'math-drill-v10';
+const CACHE_NAME = 'math-drill-v11';
 const ASSETS = [
   './',
   './index.html',
