@@ -385,12 +385,13 @@
       answer_mode: 'auto',
       auto_delay: 25,
       answer_delay: 5,
+      beep_countdown: 5,
       selected_skills: SKILLS.map(s => s.id),
       adaptive: false,
       tts_enabled: true,
       tts_rate: 1.0,
       beep_enabled: true,
-      handsfree: false
+      handsfree: true
     };
 
     let config = { ...DEFAULT_CONFIG };
@@ -424,11 +425,16 @@
       } catch(e) {}
     }
 
-    function speak(text) {
-      if (!config.tts_enabled || !('speechSynthesis' in window)) return;
+    function speak(text, onEnd) {
+      if (!config.tts_enabled || !('speechSynthesis' in window)) {
+        if (onEnd) onEnd();
+        return;
+      }
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.rate = config.tts_rate;
+      utter.onend = () => { if (onEnd) onEnd(); };
+      utter.onerror = () => { if (onEnd) onEnd(); };
       window.speechSynthesis.speak(utter);
     }
 
@@ -592,6 +598,11 @@
       if (params.has('ans_delay')) {
         const ad = parseInt(params.get('ans_delay'));
         if (ad >= 1 && ad <= 30) config.answer_delay = ad;
+      }
+
+      if (params.has('beep_cd')) {
+        const bcd = parseInt(params.get('beep_cd'));
+        if (bcd >= 1 && bcd <= 10) config.beep_countdown = bcd;
       }
 
       saveConfig();
@@ -801,6 +812,14 @@
         </div>
 
         <div class="stepper">
+          <span>Countdown Notification: <b>Last ${config.beep_countdown || 5}s</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustBeepCountdown(-1)">−</button>
+            <button class="stepper-btn" onclick="adjustBeepCountdown(1)">＋</button>
+          </div>
+        </div>
+
+        <div class="stepper">
           <span>Show Answer: <b>${config.answer_delay || 5}s</b></span>
           <div>
             <button class="stepper-btn" onclick="adjustAnswerDelay(-1)">−</button>
@@ -828,6 +847,7 @@
 
     function setMode(m) { config.answer_mode = m; saveConfig(); renderModeSelect(); }
     function adjustDelay(d) { config.auto_delay = Math.max(1, Math.min(30, config.auto_delay + d)); saveConfig(); renderModeSelect(); }
+    function adjustBeepCountdown(d) { config.beep_countdown = Math.max(1, Math.min(10, (config.beep_countdown || 5) + d)); saveConfig(); renderModeSelect(); }
     function adjustAnswerDelay(d) { config.answer_delay = Math.max(1, Math.min(30, (config.answer_delay || 5) + d)); saveConfig(); renderModeSelect(); }
     function toggleAdaptive() { config.adaptive = !config.adaptive; saveConfig(); renderModeSelect(); }
     function toggleHandsfree() { config.handsfree = !config.handsfree; if (config.handsfree) config.answer_mode = 'auto'; saveConfig(); renderModeSelect(); }
@@ -835,6 +855,7 @@
     function resetModeDefaults() {
       config.answer_mode = DEFAULT_CONFIG.answer_mode;
       config.auto_delay = DEFAULT_CONFIG.auto_delay;
+      config.beep_countdown = DEFAULT_CONFIG.beep_countdown;
       config.answer_delay = DEFAULT_CONFIG.answer_delay;
       config.num_questions = DEFAULT_CONFIG.num_questions;
       config.adaptive = DEFAULT_CONFIG.adaptive;
@@ -872,34 +893,39 @@
         <div class="subtitle">${skill.category_name} — Q${session.currentIndex + 1} of ${config.num_questions}</div>
         <div class="title">${skill.name}</div>
         <div class="prompt-text">${qData.prompt}</div>
-        <div class="status-text" id="status-label"></div>
+        <div class="status-text" id="status-label">Reading question…</div>
         <div class="spacer"></div>
         <button class="btn" onclick="speak('${qData.speakPrompt}')">🔊 Repeat Question</button>
         ${config.answer_mode === 'manual' ? '<button class="btn btn-primary" onclick="revealAnswer(true)">Show Answer</button>' : ''}
         <button class="btn btn-danger" style="margin-top: 6px;" onclick="cancelSession()">Cancel Drill</button>
       `;
 
-      speak(qData.speakPrompt);
-      session.startTime = Date.now();
+      // 1. SPEAK QUESTION FIRST (Timers start AFTER speaking finishes!)
+      speak(qData.speakPrompt, () => {
+        session.startTime = Date.now();
 
-      if (config.answer_mode === 'manual') {
-        session.timer = setInterval(() => {
-          const elapsed = ((Date.now() - session.startTime) / 1000).toFixed(1);
-          document.getElementById('status-label').innerText = `${elapsed} s`;
-        }, 100);
-      } else {
-        session.countdown = config.auto_delay;
-        session.timer = setInterval(() => {
-          session.countdown--;
-          if (session.countdown <= 5 && session.countdown > 0) playBeep();
-          if (session.countdown <= 0) {
-            clearInterval(session.timer);
-            revealAnswer(false);
-          } else {
-            document.getElementById('status-label').innerText = `Revealing in ${session.countdown} s…`;
-          }
-        }, 1000);
-      }
+        if (config.answer_mode === 'manual') {
+          session.timer = setInterval(() => {
+            const elapsed = ((Date.now() - session.startTime) / 1000).toFixed(1);
+            const statusEl = document.getElementById('status-label');
+            if (statusEl) statusEl.innerText = `${elapsed} s`;
+          }, 100);
+        } else {
+          session.countdown = config.auto_delay;
+          session.timer = setInterval(() => {
+            session.countdown--;
+            const beepCd = config.beep_countdown || 5;
+            if (session.countdown <= beepCd && session.countdown > 0) playBeep();
+            if (session.countdown <= 0) {
+              clearInterval(session.timer);
+              revealAnswer(false);
+            } else {
+              const statusEl = document.getElementById('status-label');
+              if (statusEl) statusEl.innerText = `Revealing in ${session.countdown} s…`;
+            }
+          }, 1000);
+        }
+      });
     }
 
     function revealAnswer(manual) {
@@ -911,7 +937,7 @@
       app.innerHTML = `
         <div class="subtitle">${session.current.prompt}</div>
         <div class="answer-text">${session.current.answer}</div>
-        <div class="status-text">Time: ${timeTaken} s</div>
+        <div class="status-text" id="answer-status-label">Reading answer…</div>
         <div class="spacer"></div>
         <button class="btn" onclick="speak('The answer is ${session.current.speakAnswer}')">🔊 Repeat Answer</button>
         <div class="row">
@@ -921,12 +947,16 @@
         <button class="btn btn-danger" style="margin-top: 6px;" onclick="cancelSession()">Cancel Drill</button>
       `;
 
-      speak(`The answer is ${session.current.speakAnswer}`);
+      // 2. SPEAK ANSWER FIRST (Answer display timer starts AFTER speaking finishes!)
+      speak(`The answer is ${session.current.speakAnswer}`, () => {
+        const statusEl = document.getElementById('answer-status-label');
+        if (statusEl) statusEl.innerText = `Time taken: ${timeTaken} s`;
 
-      if ((config.handsfree || config.answer_mode === 'auto') && !manual) {
-        const displayTime = (config.answer_delay || 5) * 1000;
-        session.revealTimeout = setTimeout(() => { reportGrading(true); }, displayTime);
-      }
+        if ((config.handsfree || config.answer_mode === 'auto') && !manual) {
+          const displayTime = (config.answer_delay || 5) * 1000;
+          session.revealTimeout = setTimeout(() => { reportGrading(true); }, displayTime);
+        }
+      });
     }
 
     function reportGrading(correct) {
@@ -1157,12 +1187,13 @@
       q: 3,
       mode: 'auto',
       delay: 25,
-      ansDelay: 5
+      ansDelay: 5,
+      beepCd: 5
     };
 
     function renderShortcutsBuilder() {
       const baseUrl = window.location.origin + window.location.pathname;
-      const generatedUrl = `${baseUrl}?skills=${shortcutPreset.skillPreset}&q=${shortcutPreset.q}&mode=${shortcutPreset.mode}&delay=${shortcutPreset.delay}&ans_delay=${shortcutPreset.ansDelay}&start=true`;
+      const generatedUrl = `${baseUrl}?skills=${shortcutPreset.skillPreset}&q=${shortcutPreset.q}&mode=${shortcutPreset.mode}&delay=${shortcutPreset.delay}&ans_delay=${shortcutPreset.ansDelay}&beep_cd=${shortcutPreset.beepCd}&start=true`;
 
       app.innerHTML = `
         <div class="title">Shortcut Link Creator</div>
@@ -1203,6 +1234,14 @@
         </div>
 
         <div class="stepper">
+          <span>Countdown Notification: <b>Last ${shortcutPreset.beepCd}s</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustShortcutBeepCd(-1)">−</button>
+            <button class="stepper-btn" onclick="adjustShortcutBeepCd(1)">＋</button>
+          </div>
+        </div>
+
+        <div class="stepper">
           <span>Show Answer: <b>${shortcutPreset.ansDelay}s</b></span>
           <div>
             <button class="stepper-btn" onclick="adjustShortcutAnsDelay(-1)">−</button>
@@ -1220,7 +1259,7 @@
           2. Open iOS <b>Shortcuts app</b> $\rightarrow$ Tap <b>+</b> (new shortcut).<br>
           3. Tap <b>Add Action</b> $\rightarrow$ Search <b>"Open URLs"</b>.<br>
           4. Paste this copied URL into the action field.<br>
-          5. Rename shortcut (e.g., <i>"Quick Math"</i>). You can now ask Siri to run it!
+          5. Rename shortcut (e.g., <i>"Thufir Math"</i>). You can now ask Siri to run it!
         </div>
 
         <div class="spacer"></div>
@@ -1240,6 +1279,11 @@
 
     function adjustShortcutDelay(delta) {
       shortcutPreset.delay = Math.max(1, Math.min(30, shortcutPreset.delay + delta));
+      renderShortcutsBuilder();
+    }
+
+    function adjustShortcutBeepCd(delta) {
+      shortcutPreset.beepCd = Math.max(1, Math.min(10, shortcutPreset.beepCd + delta));
       renderShortcutsBuilder();
     }
 
@@ -1333,25 +1377,23 @@
         exportDate: new Date().toISOString()
       };
       const jsonStr = JSON.stringify(backupData, null, 2);
-      const fileName = `math_drill_backup_${new Date().toISOString().split('T')[0]}.json`;
+      const fileName = `thufir_backup_${new Date().toISOString().split('T')[0]}.json`;
 
-      // 1. TRY NATIVE iOS SHARE SHEET (Works for Safari PWAs / iOS Files app)
       if (navigator.canShare && navigator.share) {
         try {
           const file = new File([jsonStr], fileName, { type: 'application/json' });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
-              title: 'Math Drill Backup'
+              title: 'Thufir Math Backup'
             });
             return;
           }
         } catch (err) {
-          if (err.name === 'AbortError') return; // User dismissed share sheet
+          if (err.name === 'AbortError') return;
         }
       }
 
-      // 2. STANDARD BROWSER DOWNLOAD FALLBACK
       try {
         const blob = new Blob([jsonStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
