@@ -379,7 +379,7 @@
     const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    // --- DEFAULT CONFIGURATION ---
+    // --- DEFAULT CONFIGURATIONS ---
     const DEFAULT_CONFIG = {
       num_questions: 5,
       answer_mode: 'auto',
@@ -394,17 +394,33 @@
       handsfree: true
     };
 
+    const DEFAULT_QUICK_CONFIG = {
+      num_questions: 5,
+      answer_mode: 'auto',
+      auto_delay: 25,
+      answer_delay: 5,
+      beep_countdown: 5,
+      handsfree: true
+    };
+
     let config = { ...DEFAULT_CONFIG };
+    let quick_config = { ...DEFAULT_QUICK_CONFIG };
+    let last_drill_config = JSON.parse(localStorage.getItem('thufir_last_drill') || 'null');
 
     let stats = JSON.parse(localStorage.getItem('daydrill_stats') || '{}');
     let tutorialProgress = JSON.parse(localStorage.getItem('daydrill_tutorial') || '{}');
 
     function saveConfig() { localStorage.setItem('daydrill_config', JSON.stringify(config)); }
+    function saveQuickConfig() { localStorage.setItem('thufir_quick_config', JSON.stringify(quick_config)); }
+    function saveLastDrillConfig(cfg) { last_drill_config = cfg; localStorage.setItem('thufir_last_drill', JSON.stringify(cfg)); }
     function saveStats() { localStorage.setItem('daydrill_stats', JSON.stringify(stats)); }
     function saveTutorial() { localStorage.setItem('daydrill_tutorial', JSON.stringify(tutorialProgress)); }
 
     const savedConfig = localStorage.getItem('daydrill_config');
     if (savedConfig) { try { config = { ...config, ...JSON.parse(savedConfig) }; } catch(e){} }
+
+    const savedQuickConfig = localStorage.getItem('thufir_quick_config');
+    if (savedQuickConfig) { try { quick_config = { ...quick_config, ...JSON.parse(savedQuickConfig) }; } catch(e){} }
 
     // --- AUDIO & SPEECH UTILS ---
     let audioCtx = null;
@@ -629,6 +645,7 @@
         
         <!-- TOP SECTION -->
         <button class="btn btn-primary" onclick="renderSkillSelect()">▶ Start Drill</button>
+        <button class="btn btn-primary" style="background-color: #3b82f6;" onclick="renderQuickDrillMenu()">⚡ Quick Drill</button>
         <button class="btn btn-success" onclick="renderMathCalc()">🔢 Math Calculator</button>
         <button class="btn btn-success" onclick="renderDateCalc()">📅 Date Calculator</button>
         <button class="btn btn-purple" onclick="renderTutorialMenu()">🎓 Tutorial Mode</button>
@@ -641,6 +658,112 @@
         <button class="btn" onclick="renderSettings()">🔊 Speech Settings</button>
         <button class="btn" onclick="renderShortcutsBuilder()">🗣 Siri & Shortcuts Builder</button>
       `;
+    }
+
+    // --- QUICK DRILL MENU SCREEN ---
+    function renderQuickDrillMenu() {
+      let skillButtons = SKILLS.map(s => `
+        <button class="btn" style="background-color: var(--card); color: var(--text); border: 1px solid var(--border); text-align: left; justify-content: flex-start; padding: 12px 14px;" onclick="startQuickSkillDrill('${s.id}')">
+          ⚡ ${s.name}
+        </button>
+      `).join('');
+
+      const repeatBtnOpacity = last_drill_config ? '1' : '0.5';
+
+      app.innerHTML = `
+        <div class="title">Quick Drill</div>
+        <div class="subtitle">Launch instant single-skill drills or repeat your last drill</div>
+
+        <button class="btn btn-primary" style="opacity: ${repeatBtnOpacity};" onclick="repeatLastDrill()">🔁 Repeat Last Drill</button>
+
+        <div class="scroll-container" style="margin-top: 6px;">
+          ${skillButtons}
+        </div>
+
+        <div class="row" style="margin-top: 4px;">
+          <button class="btn btn-purple" onclick="renderQuickSettings()">⚙️ Quick Defaults</button>
+          <button class="btn btn-warning" onclick="resetQuickDefaultsAlert()">↺ Reset Defaults</button>
+        </div>
+        <button class="btn" onclick="renderHome()">Home</button>
+      `;
+    }
+
+    function startQuickSkillDrill(skillId) {
+      config = {
+        ...config,
+        ...quick_config,
+        selected_skills: [skillId]
+      };
+      saveConfig();
+      saveLastDrillConfig(config);
+      startSession();
+    }
+
+    function repeatLastDrill() {
+      if (!last_drill_config) {
+        alert('No previous drill saved yet! Start a drill first.');
+        return;
+      }
+      config = { ...last_drill_config };
+      saveConfig();
+      startSession();
+    }
+
+    function renderQuickSettings() {
+      app.innerHTML = `
+        <div class="title">Quick Drill Defaults</div>
+        <div class="subtitle">Default parameters applied when starting a Quick Drill</div>
+
+        <div class="stepper">
+          <span>Questions: <b>${quick_config.num_questions}</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustQuickConfig('num_questions', -1, 1, 10)">−</button>
+            <button class="stepper-btn" onclick="adjustQuickConfig('num_questions', 1, 1, 10)">＋</button>
+          </div>
+        </div>
+
+        <div class="stepper">
+          <span>Question Timer: <b>${quick_config.auto_delay}s</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustQuickConfig('auto_delay', -1, 1, 30)">−</button>
+            <button class="stepper-btn" onclick="adjustQuickConfig('auto_delay', 1, 1, 30)">＋</button>
+          </div>
+        </div>
+
+        <div class="stepper">
+          <span>Countdown Beeps: <b>Last ${quick_config.beep_countdown}s</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustQuickConfig('beep_countdown', -1, 1, 10)">−</button>
+            <button class="stepper-btn" onclick="adjustQuickConfig('beep_countdown', 1, 1, 10)">＋</button>
+          </div>
+        </div>
+
+        <div class="stepper">
+          <span>Show Answer: <b>${quick_config.answer_delay}s</b></span>
+          <div>
+            <button class="stepper-btn" onclick="adjustQuickConfig('answer_delay', -1, 1, 30)">−</button>
+            <button class="stepper-btn" onclick="adjustQuickConfig('answer_delay', 1, 1, 30)">＋</button>
+          </div>
+        </div>
+
+        <button class="btn btn-warning" style="margin-top: 8px;" onclick="resetQuickDefaultsAlert()">↺ Reset Quick Defaults</button>
+
+        <div class="spacer"></div>
+        <button class="btn" onclick="renderQuickDrillMenu()">‹ Back to Quick Drill</button>
+      `;
+    }
+
+    function adjustQuickConfig(key, delta, min, max) {
+      quick_config[key] = Math.max(min, Math.min(max, (quick_config[key] || DEFAULT_QUICK_CONFIG[key]) + delta));
+      saveQuickConfig();
+      renderQuickSettings();
+    }
+
+    function resetQuickDefaultsAlert() {
+      quick_config = { ...DEFAULT_QUICK_CONFIG };
+      saveQuickConfig();
+      alert('Quick Drill defaults restored to factory settings!');
+      renderQuickDrillMenu();
     }
 
     // --- BASIC MATH CALCULATOR SCREEN ---
@@ -812,7 +935,7 @@
         </div>
 
         <div class="stepper">
-          <span>Countdown Notification: <b>Last ${config.beep_countdown || 5}s</b></span>
+          <span>Countdown Beeps: <b>Last ${config.beep_countdown || 5}s</b></span>
           <div>
             <button class="stepper-btn" onclick="adjustBeepCountdown(-1)">−</button>
             <button class="stepper-btn" onclick="adjustBeepCountdown(1)">＋</button>
@@ -865,6 +988,7 @@
     }
 
     function startSession() {
+      saveLastDrillConfig(config);
       session = { questions: [], currentIndex: 0, current: null, startTime: 0, timer: null, revealTimeout: null };
       nextQuestion();
     }
@@ -900,7 +1024,6 @@
         <button class="btn btn-danger" style="margin-top: 6px;" onclick="cancelSession()">Cancel Drill</button>
       `;
 
-      // 1. SPEAK QUESTION FIRST (Timers start AFTER speaking finishes!)
       speak(qData.speakPrompt, () => {
         session.startTime = Date.now();
 
@@ -947,7 +1070,6 @@
         <button class="btn btn-danger" style="margin-top: 6px;" onclick="cancelSession()">Cancel Drill</button>
       `;
 
-      // 2. SPEAK ANSWER FIRST (Answer display timer starts AFTER speaking finishes!)
       speak(`The answer is ${session.current.speakAnswer}`, () => {
         const statusEl = document.getElementById('answer-status-label');
         if (statusEl) statusEl.innerText = `Time taken: ${timeTaken} s`;
@@ -1234,7 +1356,7 @@
         </div>
 
         <div class="stepper">
-          <span>Countdown Notification: <b>Last ${shortcutPreset.beepCd}s</b></span>
+          <span>Countdown Beeps: <b>Last ${shortcutPreset.beepCd}s</b></span>
           <div>
             <button class="stepper-btn" onclick="adjustShortcutBeepCd(-1)">−</button>
             <button class="stepper-btn" onclick="adjustShortcutBeepCd(1)">＋</button>
